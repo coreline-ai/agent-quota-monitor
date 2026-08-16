@@ -2,6 +2,7 @@ import SwiftUI
 
 enum DashboardSection: String, CaseIterable, Identifiable {
     case overview
+    case connections
     case limits
     case trends
     case dataSources
@@ -11,6 +12,7 @@ enum DashboardSection: String, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .overview: "개요"
+        case .connections: "연결"
         case .limits: "한도"
         case .trends: "추세"
         case .dataSources: "데이터 소스"
@@ -20,6 +22,7 @@ enum DashboardSection: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .overview: "square.grid.2x2"
+        case .connections: "link.badge.plus"
         case .limits: "gauge.with.dots.needle.50percent"
         case .trends: "chart.xyaxis.line"
         case .dataSources: "externaldrive.connected.to.line.below"
@@ -34,31 +37,61 @@ struct DashboardRootView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(DashboardSection.allCases, selection: $selection) { section in
-                Label(section.label, systemImage: section.symbol).tag(section)
-            }
-            .navigationTitle(AppMetadata.displayName)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 210)
-        } detail: {
-            ZStack {
-                LinearGradient(
-                    colors: [Color(nsColor: .windowBackgroundColor), AppTheme.accentColor.opacity(0.055)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-                detail
-            }
-            .toolbar {
-                ToolbarItem {
+            VStack(spacing: 0) {
+                List(DashboardSection.allCases, selection: $selection) { section in
+                    Label(section.label, systemImage: section.symbol).tag(section)
+                }
+
+                Divider()
+
+                VStack(spacing: 8) {
+                    Button {
+                        selection = .connections
+                    } label: {
+                        Label("Provider 연결", systemImage: "link.badge.plus")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .help("Codex, Claude, Grok 연결 설정")
+                    .accessibilityIdentifier("dashboard.openConnections")
+
                     Button {
                         Task { await model.refresh() }
                     } label: {
                         Label("새로고침", systemImage: "arrow.clockwise")
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .disabled(model.isRefreshing)
                     .accessibilityIdentifier("dashboard.refresh")
                 }
+                .buttonStyle(.bordered)
+                .padding(12)
+            }
+            .navigationSplitViewColumnWidth(min: 180, ideal: 210)
+        } detail: {
+            VStack(spacing: 0) {
+                HStack(spacing: 10) {
+                    Text(selection.label)
+                        .font(.headline)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .frame(height: 46)
+                .background(Color(nsColor: .windowBackgroundColor))
+                .zIndex(1)
+
+                Divider()
+
+                detail
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background {
+                        LinearGradient(
+                            colors: [Color(nsColor: .windowBackgroundColor), AppTheme.accentColor.opacity(0.055)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    }
+                    .clipped()
+                    .zIndex(0)
             }
         }
         .frame(minWidth: 760, minHeight: 520)
@@ -69,6 +102,7 @@ struct DashboardRootView: View {
     private var detail: some View {
         switch selection {
         case .overview: OverviewView(model: model)
+        case .connections: ProviderConnectionsView(model: model)
         case .limits: LimitsView(snapshots: model.snapshots)
         case .trends: TrendsView(snapshots: model.history.isEmpty ? model.snapshots : model.history)
         case .dataSources: DataSourcesView(snapshots: model.snapshots)

@@ -13,7 +13,7 @@ QuotaBeacon은 Codex·Claude Code·Grok Build·Z.ai GLM Coding Plan의 구독 qu
 - Grok은 사용자가 명시적으로 승인하면 `grok login`의 `0600` credential을 읽기 전용으로 사용해 xAI 공식 CLI billing backend에서 주간 사용률·reset·선불 잔액을 조회합니다. 이 경로는 `observed · Beta`입니다.
 - Z.ai는 안전한 독립 앱용 machine contract가 확정되기 전까지 수치를 만들지 않습니다.
 - quota 값마다 출처·계약 등급·관측 시각·최신성·reset을 보존합니다.
-- 상세 창에서 개요, 한도, 추세, 데이터 소스, 설정을 제공합니다.
+- 상세 창에서 개요, 연결, 한도, 추세, 데이터 소스, 설정을 제공합니다.
 - 원본 payload·프롬프트·응답·계정 ID를 저장하지 않고 redacted JSON/CSV만 내보냅니다.
 
 ## 빌드와 테스트
@@ -42,9 +42,10 @@ Scripts/package_release.sh
 ## 연결 안전장치
 
 1. 앱은 기본적으로 모든 credential 기반 Provider 연결을 끈 상태로 시작합니다.
-2. **설정 → Provider 연결 → 승인하고 연결 적용**에서 사용자가 명시적으로 활성화합니다.
-3. 로그인, OAuth refresh, browser cookie import, 모델 호출, credit 소비, credential write-back은 하지 않습니다. Grok adapter는 access token과 user ID를 메모리에서만 선택하고 refresh token을 선택·사용·전송하지 않습니다.
-4. 실제 계정 fixture 수집과 Developer ID 공증은 별도 credential 승인이 필요합니다.
+2. 상세 창의 **왼쪽 사이드바 → 연결** 또는 사이드바 하단의 **Provider 연결** 버튼에서 경로를 확인한 뒤 **읽기 전용 연결 적용**을 눌러 명시적으로 활성화합니다.
+3. Codex 실행 파일은 일반 설치 경로와 `~/.nvm/versions/node/*/bin/codex`에서 자동 탐색합니다.
+4. 로그인, OAuth refresh, browser cookie import, 모델 호출, credit 소비, credential write-back은 하지 않습니다. Grok adapter는 access token과 user ID를 메모리에서만 선택하고 refresh token을 선택·사용·전송하지 않습니다.
+5. 실제 계정 fixture 수집과 Developer ID 공증은 별도 credential 승인이 필요합니다.
 
 ## 문서
 

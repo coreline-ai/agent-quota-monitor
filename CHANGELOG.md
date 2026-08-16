@@ -9,6 +9,8 @@
 - Added strict Grok credential validation, allowlisted HTTPS GET-only transport, redirect/cookie/cache rejection, typed failures, synthetic billing fixtures, and a redacted real-account contract probe.
 - Added redacted JSON/CSV preview, local JSONL usage normalization, and dated API list-price catalog.
 - Added unit/UI test foundations and release/security/originality scripts.
+- Fixed dashboard detail scrolling so content remains clipped below the macOS title bar and toolbar.
+- Added a dedicated Provider connection screen with explicit apply semantics and Codex CLI auto-discovery, including NVM installs.
 
 ### Known limitations
 

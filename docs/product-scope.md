@@ -55,11 +55,22 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Z.ai GLM Coding Plan의 quota와 
 ### 방향
 
 - 디자인 언어: `Signal Ledger`
+- 메뉴 막대 세부 패턴: `Beacon Ledger`
 - 이미지: 사용량을 장식적인 캐릭터가 아니라 조용한 계측 신호로 표현
 - 형태: 긴 세로 카드 모음보다 얇은 signal row와 넓은 여백 사용
 - 강조: Provider 브랜드색보다 상태·시간·출처의 정보 위계 우선
 - 아이콘: 신규 단색 메뉴바 glyph와 신규 macOS app icon 사용
 - 차트: quota window와 local token을 별도 surface로 분리
+
+### 사용자화 범위
+
+- 화면 밀도: `균형 / 압축`
+- quota 표기: `잔여량 / 사용량`을 선택하되 위험 색상은 항상 실제 잔여량 기준
+- reset 표기: `남은 시간 / 절대 시각`
+- 테마 preset: `시스템 / 미드나이트 / 그래파이트`
+- 상세 방식: Provider 행 아래 `상세 펼침 / 요약만`
+- Provider 노출: Claude, Codex, Grok, GLM을 메뉴 막대에서 개별 표시/숨김
+- 설정은 수집 pipeline이나 credential 승인 상태를 변경하지 않고 화면 표현에만 적용
 
 ### 디자인 토큰 원칙
 
@@ -95,6 +106,7 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Z.ai GLM Coding Plan의 quota와 
 | 최소 OS | macOS 14 |
 | 배포 | Developer ID 직접 배포 |
 | 디자인 언어 | `Signal Ledger` |
+| 메뉴 막대 GUI | `Beacon Ledger` |
 | 개발 서명 | Xcode `Sign to Run Locally` |
 | 배포 Team ID | Phase 7에서 사용자 인증서의 실제 값을 CI secret으로 주입 |
 

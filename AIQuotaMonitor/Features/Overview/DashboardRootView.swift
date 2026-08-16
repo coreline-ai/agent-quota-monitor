@@ -33,7 +33,13 @@ enum DashboardSection: String, CaseIterable, Identifiable {
 
 struct DashboardRootView: View {
     @ObservedObject var model: QuotaMonitorModel
+    @Environment(\.colorScheme) private var colorScheme
+    @AppStorage(QuotaPreferenceKey.theme) private var theme = QuotaVisualTheme.system
     @State private var selection = DashboardSection.overview
+
+    private var palette: BeaconPalette {
+        BeaconPalette.resolve(theme: theme, colorScheme: colorScheme)
+    }
 
     var body: some View {
         NavigationSplitView {
@@ -76,7 +82,8 @@ struct DashboardRootView: View {
                 }
                 .padding(.horizontal, 16)
                 .frame(height: 46)
-                .background(Color(nsColor: .windowBackgroundColor))
+                .foregroundStyle(palette.primaryText)
+                .background(palette.canvas)
                 .zIndex(1)
 
                 Divider()
@@ -85,7 +92,7 @@ struct DashboardRootView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background {
                         LinearGradient(
-                            colors: [Color(nsColor: .windowBackgroundColor), AppTheme.accentColor.opacity(0.055)],
+                            colors: [palette.canvas, palette.accent.opacity(0.065)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -95,6 +102,7 @@ struct DashboardRootView: View {
             }
         }
         .frame(minWidth: 760, minHeight: 520)
+        .preferredColorScheme(theme.preferredColorScheme)
         .accessibilityIdentifier("dashboard.root")
     }
 

@@ -12,7 +12,7 @@ final class PopoverController: NSObject, NSPopoverDelegate {
         super.init()
         popover.behavior = .transient
         popover.animates = true
-        popover.contentSize = NSSize(width: 390, height: 520)
+        popover.contentSize = NSSize(width: 430, height: 560)
         popover.contentViewController = NSHostingController(
             rootView: MenuBarPlaceholderView(model: model, onShowDashboard: onShowDashboard)
         )
@@ -23,8 +23,13 @@ final class PopoverController: NSObject, NSPopoverDelegate {
         if popover.isShown {
             popover.performClose(nil)
         } else {
-            popover.show(relativeTo: positioningRect, of: positioningView, preferredEdge: .minY)
+            show(relativeTo: positioningRect, of: positioningView)
         }
+    }
+
+    func show(relativeTo positioningRect: NSRect, of positioningView: NSView) {
+        guard !popover.isShown else { return }
+        popover.show(relativeTo: positioningRect, of: positioningView, preferredEdge: .minY)
     }
 
     func popoverDidShow(_ notification: Notification) {

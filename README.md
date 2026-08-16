@@ -2,12 +2,14 @@
 
 QuotaBeacon은 Codex·Claude Code·Grok Build·Z.ai GLM Coding Plan의 구독 quota와 로컬 token/예상 API 비용을 **서로 분리해서** 보여주는 Greenfield macOS 메뉴 막대 앱입니다.
 
-> 현재 버전: `0.1.0-beta.1`  
+> 현재 버전: `0.1.0`
 > 최소 환경: macOS 14, Apple Silicon/Intel Universal
 
 ## 현재 동작
 
 - 메뉴 막대 popover에서 네 Provider의 `LIVE / 부분 데이터 / 캐시 / 연결 필요 / 확인 불가` 상태를 구분합니다.
+- `Beacon Ledger` popover에서 모든 Provider를 한 번에 훑고, Provider 행을 눌러 quota window·reset·출처·관측 시각을 같은 화면에서 펼쳐 볼 수 있습니다.
+- 상세 창의 **설정 → 표시와 밀도**에서 균형/압축, 잔여/사용, 상대/절대 reset, 상세 inspector, system/midnight/graphite 테마, Provider별 메뉴 노출을 조정할 수 있습니다.
 - Codex는 사용자가 설정에서 명시적으로 승인하면 공식 `codex app-server`의 read-only rate-limit method만 사용합니다.
 - Claude는 사용자가 연결을 승인하면 기존 Claude Code 로그인을 macOS Keychain에서 자동 탐색하고 Anthropic usage endpoint를 GET 전용으로 조회합니다. 별도 경로·statusLine 설정은 필요하지 않으며 이 경로는 `observed · Beta`입니다.
 - Grok은 사용자가 명시적으로 승인하면 `grok login`의 `0600` credential을 읽기 전용으로 사용해 xAI 공식 CLI billing backend에서 주간 사용률·reset·선불 잔액을 조회합니다. 이 경로는 `observed · Beta`입니다.
@@ -52,6 +54,7 @@ Scripts/package_release.sh
 
 ## 문서
 
+- [Beacon Ledger GUI 개발 계획](dev-plan/implement_20260816_211400.md)
 - [현재 Claude 자동 연결 개발 계획](dev-plan/implement_20260816_203449.md)
 - [정본 전체 개발 계획](dev-plan/implement_20260816_133341.md)
 - [Provider 계약](docs/provider-contracts.md)

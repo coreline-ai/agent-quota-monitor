@@ -56,6 +56,8 @@ flowchart LR
 - Claude Keychain OAuth usage GET adapter와 선택적 statusLine snapshot parser, Codex 공식 app-server read-only adapter
 - Grok 공식 CLI billing backend 기반 `observed · Beta` adapter, Z.ai status-only adapter와 네 Provider 독립 synthetic parser fixture
 - quota chart와 local token/cost chart를 분리한 5-section Signal Ledger dashboard
+- 공통 `QuotaPresentation`·`BeaconComponents`를 사용하는 Beacon Ledger popover와 한도 원장
+- AppStorage 기반 밀도·metric·reset·theme·inspector·Provider 표시 설정
 - redacted JSON/CSV export, notification threshold dedupe, SMAppService login item
 - 한국어 기본 UI와 영어 resource fallback
 
@@ -77,6 +79,8 @@ Provider credential 접근은 기본 비활성화되어 있으며 설정의 명�
 - Feature: view model과 상태 집계
 - UI: 메뉴·dashboard·설정의 핵심 사용자 흐름
 - Release: 서명, 공증, clean install, update, idle 성능
+
+GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUITest로 분리한다. 테스트 환경에서만 status item의 popover를 자동 표시하며, production activation policy와 사용자 클릭 경로는 변경하지 않는다. 팝오버의 SwiftUI 접근성 자식은 macOS ControlCenter bridge에서 제한될 수 있어, 존재·클릭·요약/상세 렌더 변화와 보존 스크린샷을 함께 검증한다.
 
 ## Phase 1 결정 기록
 

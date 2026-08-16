@@ -27,6 +27,8 @@ final class StatusItemController: NSObject {
         button.image?.accessibilityDescription = String(localized: "status.accessibilityLabel")
         button.image?.isTemplate = true
         button.toolTip = String(localized: "status.tooltip")
+        button.setAccessibilityLabel(String(localized: "status.accessibilityLabel"))
+        button.setAccessibilityIdentifier("status.quotaBeacon")
         button.target = self
         button.action = #selector(handleStatusItemClick)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -46,6 +48,12 @@ final class StatusItemController: NSObject {
     private func togglePopover() {
         guard let button = statusItem.button else { return }
         popoverController.toggle(relativeTo: button.bounds, of: button)
+    }
+
+    func showPopoverForTesting() {
+        guard ProcessInfo.processInfo.environment["AIQUOTAMONITOR_UI_TEST_POPOVER"] == "1" else { return }
+        guard let button = statusItem.button else { return }
+        popoverController.show(relativeTo: button.bounds, of: button)
     }
 
     private func showContextMenu() {

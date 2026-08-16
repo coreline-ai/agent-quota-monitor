@@ -1,98 +1,445 @@
 import SwiftUI
 
+private enum MenuProviderScope: String, CaseIterable, Identifiable {
+    case all
+    case connected
+    case attention
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .all: "모든 Provider"
+        case .connected: "연결됨"
+        case .attention: "주의 필요"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .all: "square.stack.3d.up"
+        case .connected: "link"
+        case .attention: "exclamationmark.triangle"
+        }
+    }
+}
+
 struct MenuBarPlaceholderView: View {
     @ObservedObject var model: QuotaMonitorModel
     let onShowDashboard: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(QuotaPreferenceKey.density) private var density = QuotaDensity.balanced
+    @AppStorage(QuotaPreferenceKey.metricMode) private var metricMode = QuotaMetricMode.remaining
+    @AppStorage(QuotaPreferenceKey.resetStyle) private var resetStyle = QuotaResetStyle.relative
+    @AppStorage(QuotaPreferenceKey.theme) private var theme = QuotaVisualTheme.system
+    @AppStorage(QuotaPreferenceKey.inspectorMode) private var inspectorMode = QuotaInspectorMode.expanded
+    @AppStorage(QuotaPreferenceKey.providerVisible(.claude)) private var showClaude = true
+    @AppStorage(QuotaPreferenceKey.providerVisible(.codex)) private var showCodex = true
+    @AppStorage(QuotaPreferenceKey.providerVisible(.grok)) private var showGrok = true
+    @AppStorage(QuotaPreferenceKey.providerVisible(.zai)) private var showZAI = true
+    @State private var scope = MenuProviderScope.all
+    @State private var selection: ProviderID?
+
+    private var palette: BeaconPalette {
+        BeaconPalette.resolve(theme: theme, colorScheme: colorScheme)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             header
-            ScrollView {
-                LazyVStack(spacing: 9) {
-                    ForEach(model.snapshots) { snapshot in
-                        ProviderCompactRow(snapshot: snapshot)
+            summaryStrip
+            densityControl
+
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        if filteredSnapshots.isEmpty {
+                            emptyFilterState
+                        } else {
+                            ForEach(filteredSnapshots) { snapshot in
+                                ProviderLedgerRow(
+                                    snapshot: snapshot,
+                                    isSelected: selection == snapshot.provider,
+                                    density: density,
+                                    metricMode: metricMode,
+                                    resetStyle: resetStyle,
+                                    showsInspector: inspectorMode == .expanded,
+                                    palette: palette,
+                                    onSelect: {
+                                        select(snapshot.provider)
+                                        scrollToProvider(snapshot.provider, using: proxy)
+                                    }
+                                )
+                                .id(snapshot.provider)
+                            }
+                        }
                     }
+                    .padding(.vertical, 1)
                 }
             }
-            Divider()
-            HStack {
-                Button {
-                    Task { await model.refresh() }
-                } label: {
-                    Label("menu.refresh", systemImage: "arrow.clockwise")
-                }
-                .disabled(model.isRefreshing)
-                .accessibilityIdentifier("menu.refresh")
-                Spacer()
-                Button("menu.openDashboard", action: onShowDashboard)
-                    .buttonStyle(.borderedProminent)
-                    .tint(AppTheme.accentColor)
-                    .accessibilityIdentifier("menu.openDashboard")
-            }
+
+            footer
         }
-        .padding(16)
-        .frame(width: 390, height: 520, alignment: .topLeading)
+        .padding(14)
+        .frame(width: 430, height: 560, alignment: .topLeading)
+        .background(palette.canvas)
+        .foregroundStyle(palette.primaryText)
+        .preferredColorScheme(theme.preferredColorScheme)
+        .onAppear { repairSelection() }
+        .onChange(of: filteredSnapshots.map(\.provider)) { _, _ in repairSelection() }
     }
 
     private var header: some View {
         HStack(spacing: 10) {
             ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(AppTheme.accentColor.gradient)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(palette.accent.gradient)
                 Image(systemName: AppTheme.statusItemSymbolName)
                     .foregroundStyle(.white)
             }
             .frame(width: 36, height: 36)
+
             VStack(alignment: .leading, spacing: 2) {
-                Text("menu.title").font(.headline)
-                Text(model.lastRefreshAt.map { "업데이트 \($0.formatted(date: .omitted, time: .shortened))" } ?? "로컬 전용 · 연결 대기")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text("QuotaBeacon")
+                    .font(.headline)
+                Text(lastRefreshText)
+                    .font(.caption2)
+                    .foregroundStyle(palette.secondaryText)
             }
+
+            Spacer(minLength: 8)
+
+            Menu {
+                ForEach(MenuProviderScope.allCases) { item in
+                    Button {
+                        scope = item
+                    } label: {
+                        Label(item.label, systemImage: item.symbol)
+                    }
+                }
+            } label: {
+                Label(scope.label, systemImage: scope.symbol)
+                    .font(.caption)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+            .accessibilityIdentifier("menu.scope")
+
+            Button {
+                Task { await model.refresh() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 14, weight: .semibold))
+                    .rotationEffect(.degrees(model.isRefreshing && !reduceMotion ? 360 : 0))
+                    .animation(
+                        reduceMotion ? nil : .easeInOut(duration: 0.55),
+                        value: model.isRefreshing
+                    )
+                    .frame(width: 26, height: 26)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(model.isRefreshing)
+            .help("모든 Provider 새로고침")
+            .accessibilityLabel("새로고침")
+            .accessibilityIdentifier("menu.refresh")
+        }
+    }
+
+    private var summaryStrip: some View {
+        HStack(spacing: 0) {
+            summaryMetric(
+                title: "연결",
+                value: "\(connectedVisibleCount)",
+                symbol: "link"
+            )
+            Divider().frame(height: 28)
+            summaryMetric(
+                title: "가까운 리셋",
+                value: nearestResetText,
+                symbol: "clock.arrow.circlepath"
+            )
+        }
+        .padding(.vertical, 8)
+        .background(palette.elevatedSurface, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(palette.border)
+        }
+    }
+
+    private var densityControl: some View {
+        Picker("표시 밀도", selection: $density) {
+            ForEach(QuotaDensity.allCases) { item in
+                Text(item.label).tag(item)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .accessibilityLabel("표시 밀도")
+        .accessibilityIdentifier("menu.density")
+    }
+
+    private var footer: some View {
+        HStack(spacing: 10) {
+            Label("\(metricMode.label) 표시 · 위험은 잔여 기준", systemImage: "circle.lefthalf.filled")
+                .font(.caption2)
+                .foregroundStyle(palette.secondaryText)
+                .lineLimit(1)
+                .layoutPriority(1)
             Spacer()
-            if model.isRefreshing { ProgressView().controlSize(.small) }
+            Button("대시보드 열기", action: onShowDashboard)
+                .buttonStyle(.borderedProminent)
+                .tint(palette.accent)
+                .fixedSize()
+                .accessibilityIdentifier("menu.openDashboard")
+        }
+        .padding(.top, 2)
+    }
+
+    private var emptyFilterState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: scope == .all ? "eye.slash" : "line.3.horizontal.decrease.circle")
+                .font(.title2)
+                .foregroundStyle(palette.secondaryText)
+            Text(scope == .all ? "표시할 Provider가 없습니다." : "이 필터에 해당하는 Provider가 없습니다.")
+                .font(.subheadline.weight(.medium))
+            Text(scope == .all ? "대시보드 설정에서 Provider 표시를 켜세요." : "다른 범위를 선택해 보세요.")
+                .font(.caption)
+                .foregroundStyle(palette.secondaryText)
+        }
+        .frame(maxWidth: .infinity, minHeight: 170)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func summaryMetric(title: String, value: String, symbol: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: symbol).foregroundStyle(palette.accent)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).font(.caption2).foregroundStyle(palette.secondaryText)
+                Text(value).font(.caption.monospacedDigit().weight(.semibold)).lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var lastRefreshText: String {
+        guard let lastRefreshAt = model.lastRefreshAt else { return "로컬 전용 · 연결 상태 확인 중" }
+        return "업데이트 \(lastRefreshAt.formatted(date: .omitted, time: .shortened))"
+    }
+
+    private var connectedVisibleCount: Int {
+        visibleSnapshots.filter { [.available, .partial, .stale].contains($0.state) }.count
+    }
+
+    private var nearestResetText: String {
+        let date = visibleSnapshots
+            .flatMap(\.windows)
+            .compactMap(\.resetsAt)
+            .filter { $0 > Date() }
+            .min()
+        return QuotaPresentation.resetText(for: date, style: resetStyle)
+    }
+
+    private var visibleSnapshots: [ProviderSnapshot] {
+        model.snapshots.filter { isVisible($0.provider) }
+    }
+
+    private var filteredSnapshots: [ProviderSnapshot] {
+        visibleSnapshots.filter { snapshot in
+            switch scope {
+            case .all:
+                true
+            case .connected:
+                [.available, .partial, .stale].contains(snapshot.state)
+            case .attention:
+                snapshot.state != .available
+                    || snapshot.windows.contains { $0.remainingRatio <= 0.25 }
+            }
+        }
+    }
+
+    private func isVisible(_ provider: ProviderID) -> Bool {
+        switch provider {
+        case .claude: showClaude
+        case .codex: showCodex
+        case .grok: showGrok
+        case .zai: showZAI
+        }
+    }
+
+    private func repairSelection() {
+        let available = filteredSnapshots.map(\.provider)
+        guard let selection else { return }
+        guard available.contains(selection) else {
+            self.selection = nil
+            return
+        }
+    }
+
+    private func select(_ provider: ProviderID) {
+        let nextSelection = selection == provider ? nil : provider
+        if reduceMotion {
+            selection = nextSelection
+        } else {
+            withAnimation(.easeOut(duration: 0.16)) { selection = nextSelection }
+        }
+    }
+
+    private func scrollToProvider(_ provider: ProviderID, using proxy: ScrollViewProxy) {
+        DispatchQueue.main.async {
+            if reduceMotion {
+                proxy.scrollTo(provider, anchor: .top)
+            } else {
+                withAnimation(.easeOut(duration: 0.16)) {
+                    proxy.scrollTo(provider, anchor: .top)
+                }
+            }
         }
     }
 }
 
-struct ProviderCompactRow: View {
+private struct ProviderLedgerRow: View {
     let snapshot: ProviderSnapshot
+    let isSelected: Bool
+    let density: QuotaDensity
+    let metricMode: QuotaMetricMode
+    let resetStyle: QuotaResetStyle
+    let showsInspector: Bool
+    let palette: BeaconPalette
+    let onSelect: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(snapshot.provider.displayName).font(.subheadline.weight(.semibold))
-                Spacer()
-                ProviderStateBadge(state: snapshot.state)
-            }
-            if snapshot.windows.isEmpty {
-                Text(emptyMessage).font(.caption).foregroundStyle(.secondary)
-            } else {
-                ForEach(snapshot.windows) { window in
-                    VStack(spacing: 4) {
-                        HStack {
-                            Text(window.kind.label).font(.caption)
-                            Spacer()
-                            Text(window.remainingRatio, format: .percent.precision(.fractionLength(0)))
-                                .font(.caption.monospacedDigit().weight(.semibold))
+        Button(action: onSelect) {
+            BeaconSurface(selected: isSelected, palette: palette) {
+                HStack(alignment: .top, spacing: 10) {
+                    beaconRail
+                    ProviderMark(provider: snapshot.provider, size: density == .compact ? 27 : 31)
+                    VStack(alignment: .leading, spacing: density == .compact ? 6 : 9) {
+                        providerHeader
+                        quotaSummary
+                        if isSelected, showsInspector, !snapshot.windows.isEmpty {
+                            Divider().overlay(palette.border)
+                            providerInspector
+                                .transition(.opacity.combined(with: .move(edge: .top)))
                         }
-                        ProgressView(value: window.remainingRatio)
-                            .tint(color(for: window.remainingRatio))
-                        HStack {
-                            Text(window.provenance.freshness.label)
-                            Spacer()
-                            Text(window.resetsAt.map { "리셋 \($0.formatted(date: .omitted, time: .shortened))" } ?? "리셋 미확인")
-                        }
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
                     }
                 }
             }
         }
-        .padding(12)
-        .background(AppTheme.panel, in: RoundedRectangle(cornerRadius: 13))
-        .accessibilityElement(children: .combine)
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .contain)
         .accessibilityLabel("\(snapshot.provider.displayName), \(snapshot.state.label)")
+        .accessibilityIdentifier("menu.provider.\(snapshot.provider.rawValue)")
+    }
+
+    private var beaconRail: some View {
+        Capsule()
+            .fill(snapshot.provider.beaconTint.opacity(isSelected ? 1 : 0.32))
+            .frame(width: 3, height: isSelected ? 30 : 16)
+            .padding(.top, isSelected ? 0 : 7)
+            .shadow(color: isSelected ? snapshot.provider.beaconTint.opacity(0.42) : .clear, radius: 4)
+            .accessibilityHidden(true)
+    }
+
+    private var providerHeader: some View {
+        HStack(spacing: 7) {
+            Text(snapshot.provider.beaconShortName)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(palette.primaryText)
+            ProviderStateBadge(state: snapshot.state)
+            Spacer(minLength: 4)
+            Text(resetSummary)
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(palette.secondaryText)
+                .lineLimit(1)
+            Image(systemName: isSelected ? "chevron.down" : "chevron.right")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(palette.secondaryText)
+        }
+    }
+
+    @ViewBuilder
+    private var quotaSummary: some View {
+        if snapshot.windows.isEmpty {
+            Text(emptyMessage)
+                .font(.caption)
+                .foregroundStyle(palette.secondaryText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else if density == .compact, let window = mostUrgentWindow {
+            BeaconQuotaBar(
+                window: window,
+                metricMode: metricMode,
+                resetStyle: resetStyle,
+                palette: palette,
+                compact: true
+            )
+        } else {
+            VStack(spacing: 6) {
+                ForEach(snapshot.windows.prefix(3)) { window in
+                    compactMeter(window)
+                }
+            }
+        }
+    }
+
+    private var providerInspector: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            HStack {
+                Text("Quota 상세").font(.caption.weight(.bold)).foregroundStyle(palette.secondaryText)
+                Spacer()
+                Text("\(snapshot.windows.count)개 window")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(palette.secondaryText)
+            }
+            ForEach(snapshot.windows) { window in
+                BeaconQuotaBar(
+                    window: window,
+                    metricMode: metricMode,
+                    resetStyle: resetStyle,
+                    palette: palette,
+                    showProvenance: true
+                )
+            }
+        }
+        .padding(.top, 1)
+    }
+
+    private func compactMeter(_ window: QuotaWindow) -> some View {
+        let ratio = QuotaPresentation.ratio(for: window, mode: metricMode)
+        let urgency = QuotaPresentation.urgency(forRemaining: window.remainingRatio)
+        return HStack(spacing: 7) {
+            Text(window.kind.label)
+                .font(.caption2)
+                .foregroundStyle(palette.secondaryText)
+                .frame(width: 54, alignment: .leading)
+                .lineLimit(1)
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(palette.secondaryText.opacity(0.18))
+                    Capsule().fill(color(for: urgency)).frame(width: proxy.size.width * ratio)
+                }
+            }
+            .frame(height: 5)
+            Text(QuotaPresentation.percentText(ratio))
+                .font(.caption2.monospacedDigit().weight(.semibold))
+                .foregroundStyle(color(for: urgency))
+                .frame(width: 30, alignment: .trailing)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(window.kind.label), \(metricMode.label) \(QuotaPresentation.percentText(ratio))")
+    }
+
+    private var resetSummary: String {
+        let reset = snapshot.windows.compactMap(\.resetsAt).filter { $0 > Date() }.min()
+        return QuotaPresentation.resetText(for: reset, style: resetStyle)
+    }
+
+    private var mostUrgentWindow: QuotaWindow? {
+        snapshot.windows.min { $0.remainingRatio < $1.remainingRatio }
     }
 
     private var emptyMessage: String {
@@ -103,9 +450,11 @@ struct ProviderCompactRow: View {
         }
     }
 
-    private func color(for remaining: Double) -> Color {
-        if remaining <= 0.1 { return AppTheme.danger }
-        if remaining <= 0.25 { return AppTheme.warning }
-        return AppTheme.cyan
+    private func color(for urgency: QuotaUrgency) -> Color {
+        switch urgency {
+        case .healthy: AppTheme.cyan
+        case .warning: AppTheme.warning
+        case .critical: AppTheme.danger
+        }
     }
 }

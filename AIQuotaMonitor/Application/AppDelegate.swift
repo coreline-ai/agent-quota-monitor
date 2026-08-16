@@ -7,7 +7,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let model = QuotaMonitorModel()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApplication.shared.setActivationPolicy(.accessory)
+        let isUITesting = ProcessInfo.processInfo.environment["AIQUOTAMONITOR_UI_TEST"] == "1"
+        NSApplication.shared.setActivationPolicy(isUITesting ? .regular : .accessory)
 
         let dashboardWindowController = DashboardWindowController(model: model)
         self.dashboardWindowController = dashboardWindowController
@@ -21,8 +22,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
-        if ProcessInfo.processInfo.environment["AIQUOTAMONITOR_UI_TEST"] == "1" {
+        if isUITesting {
             dashboardWindowController.showWindow()
+        }
+        if ProcessInfo.processInfo.environment["AIQUOTAMONITOR_UI_TEST_POPOVER"] == "1" {
+            // Give NSStatusBar one run-loop cycle to attach and lay out its button.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+                self?.statusItemController?.showPopoverForTesting()
+            }
         }
         model.startAutomaticRefresh()
         NSWorkspace.shared.notificationCenter.addObserver(

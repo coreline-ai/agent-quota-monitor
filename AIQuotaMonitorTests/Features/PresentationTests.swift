@@ -2,6 +2,53 @@ import XCTest
 @testable import AIQuotaMonitor
 
 final class PresentationTests: XCTestCase {
+    func testQuotaPresentationSupportsRemainingAndUsedMetrics() throws {
+        let window = QuotaWindow(
+            kind: .fiveHour,
+            usedRatio: try QuotaRatio(0.75),
+            resetsAt: nil,
+            provenance: ValueProvenance(
+                source: .syntheticFixture,
+                contract: .documented,
+                observedAt: Date(timeIntervalSince1970: 0),
+                freshness: .live
+            )
+        )
+
+        XCTAssertEqual(QuotaPresentation.ratio(for: window, mode: .remaining), 0.25, accuracy: 0.0001)
+        XCTAssertEqual(QuotaPresentation.ratio(for: window, mode: .used), 0.75, accuracy: 0.0001)
+        XCTAssertEqual(QuotaPresentation.percentText(0.256), "26%")
+        XCTAssertEqual(QuotaPresentation.percentText(-1), "0%")
+        XCTAssertEqual(QuotaPresentation.percentText(2), "100%")
+    }
+
+    func testQuotaUrgencyUsesRemainingThresholds() {
+        XCTAssertEqual(QuotaPresentation.urgency(forRemaining: 0), .critical)
+        XCTAssertEqual(QuotaPresentation.urgency(forRemaining: 0.10), .critical)
+        XCTAssertEqual(QuotaPresentation.urgency(forRemaining: 0.1001), .warning)
+        XCTAssertEqual(QuotaPresentation.urgency(forRemaining: 0.25), .warning)
+        XCTAssertEqual(QuotaPresentation.urgency(forRemaining: 0.2501), .healthy)
+        XCTAssertEqual(QuotaPresentation.urgency(forRemaining: 1), .healthy)
+    }
+
+    func testResetPresentationHandlesRelativeUnknownAndPastDates() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertEqual(
+            QuotaPresentation.resetText(for: now.addingTimeInterval(2 * 86_400 + 3_600), style: .relative, relativeTo: now),
+            "2일 1시간 후"
+        )
+        XCTAssertEqual(
+            QuotaPresentation.resetText(for: now.addingTimeInterval(90), style: .relative, relativeTo: now),
+            "1분 이내"
+        )
+        XCTAssertEqual(QuotaPresentation.resetText(for: now, style: .relative, relativeTo: now), "리셋 확인 필요")
+        XCTAssertEqual(QuotaPresentation.resetText(for: nil, style: .absolute, relativeTo: now), "리셋 미확인")
+    }
+
+    func testProviderMarksAreIndependentAndUnique() {
+        XCTAssertEqual(Set(ProviderID.allCases.map(\.beaconSymbol)).count, ProviderID.allCases.count)
+    }
+
     func testUnavailableStatesHaveNoInventedWindows() async throws {
         for provider in ProviderID.allCases {
             let state: ProviderState = provider == .zai ? .unsupportedContract : .notConfigured

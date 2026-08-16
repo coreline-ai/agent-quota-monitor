@@ -1,5 +1,13 @@
 {
-  "weekly": { "used_percentage": 41, "resets_at": 1787356800 },
-  "products": { "build_used_percentage": 18 },
-  "extra_credits": { "available": true, "balance": "12.00" }
+  "config": {
+    "creditUsagePercent": 41,
+    "currentPeriod": {
+      "type": "USAGE_PERIOD_TYPE_WEEKLY",
+      "start": "2026-08-16T00:00:00Z",
+      "end": "2026-08-23T00:00:00Z"
+    },
+    "prepaidBalance": { "val": 1200 },
+    "isUnifiedBillingUser": true,
+    "productUsage": []
+  }
 }

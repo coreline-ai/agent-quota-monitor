@@ -54,7 +54,7 @@ flowchart LR
 - cancellation/timeout HTTP·Process 경계와 read-only credential validator/Keychain
 - versioned JSON history, 90일·25 MiB retention, Provider별 single-flight refresh
 - Claude read-only snapshot, Codex 공식 app-server read-only adapter
-- Grok/Z.ai status-only adapter와 네 Provider 독립 synthetic parser fixture
+- Grok 공식 CLI billing backend 기반 `observed · Beta` adapter, Z.ai status-only adapter와 네 Provider 독립 synthetic parser fixture
 - quota chart와 local token/cost chart를 분리한 5-section Signal Ledger dashboard
 - redacted JSON/CSV export, notification threshold dedupe, SMAppService login item
 - 한국어 기본 UI와 영어 resource fallback
@@ -96,11 +96,19 @@ Provider credential 접근은 기본 비활성화되어 있으며 설정의 명�
 ## 런타임 흐름
 
 1. `AppDelegate`가 shared `QuotaMonitorModel`과 status/dashboard controller를 조립한다.
-2. `QuotaMonitorModel`은 저장된 opt-in 설정만으로 Provider adapter를 만든다.
+2. `QuotaMonitorModel`은 저장된 opt-in 설정만으로 Provider adapter를 만든다. Grok이 비활성화된 경우 auth file 접근이나 network request는 발생하지 않는다.
 3. `RefreshCoordinator`가 Provider별 single-flight task를 실행하고 한 Provider 실패를 격리한다.
 4. `SnapshotStore`가 부분 결과를 last-known-good와 병합하되 이전 값은 `stale`로 바꾼다.
 5. menu/dashboard는 `ProviderSnapshot`만 소비하며 credential path나 원본 payload를 보지 않는다.
 6. popover가 보이면 60초, 일반 상태 5분, 실패 시 15/60분 backoff를 적용한다.
+
+## Grok read-only 흐름
+
+1. 사용자가 Grok Beta 연결을 켜고 `~/.grok/auth.json` 경로를 승인한다.
+2. `GrokCredentialReader`가 symlink를 거부하고 regular file·owner·allowlist·`0600`·expiry를 검증한다.
+3. access token과 user ID만 메모리에서 선택하며 refresh token은 선택·사용·전송하지 않는다.
+4. `GrokBillingProvider`가 `https://cli-chat-proxy.grok.com/v1/billing?format=credits`에 GET을 보내고 redirect·cookie·cache를 거부한다.
+5. `GrokQuotaParser`가 사용률·기간·reset·선불 잔액만 공통 domain으로 정규화하며 원본 payload와 계정 정보는 저장하지 않는다.
 
 ## 배포 경계
 

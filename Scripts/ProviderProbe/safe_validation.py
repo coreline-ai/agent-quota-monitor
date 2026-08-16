@@ -302,20 +302,51 @@ def command_names(help_text: str) -> list[str]:
     return names
 
 
+def file_contains_marker(path: Path, marker: bytes) -> bool:
+    overlap = max(0, len(marker) - 1)
+    tail = b""
+    try:
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(1024 * 1024), b""):
+                value = tail + block
+                if marker in value:
+                    return True
+                tail = value[-overlap:] if overlap else b""
+    except OSError:
+        return False
+    return False
+
+
 def grok_capability_summary(executable: str | None) -> dict[str, Any]:
     if executable is None:
-        return {"state": "cli_missing", "quotaCommandDocumented": False}
-    result = run_command([executable, "--help"])
-    if result is None:
-        return {"state": "timeout_or_launch_failed", "quotaCommandDocumented": False}
-    names = command_names(result.stdout + "\n" + result.stderr)
+        return {
+            "state": "cli_missing",
+            "quotaCommandDocumented": False,
+            "agentStdioDocumented": False,
+            "billingExtensionEmbedded": False,
+        }
+    top = run_command([executable, "--help"])
+    agent = run_command([executable, "agent", "--help"])
+    if top is None:
+        return {
+            "state": "timeout_or_launch_failed",
+            "quotaCommandDocumented": False,
+            "agentStdioDocumented": False,
+            "billingExtensionEmbedded": file_contains_marker(Path(executable), b"x.ai/billing"),
+        }
+    names = command_names(top.stdout + "\n" + top.stderr)
+    agent_names = command_names(agent.stdout + "\n" + agent.stderr) if agent else []
     quota_names = {"usage", "quota", "limits", "billing"}
+    billing_embedded = file_contains_marker(Path(executable), b"x.ai/billing")
     return {
-        "state": "ok" if result.returncode == 0 else "command_failed",
+        "state": "ok" if top.returncode == 0 else "command_failed",
         "quotaCommandDocumented": any(name in quota_names for name in names),
+        "agentStdioDocumented": "stdio" in agent_names,
+        "billingExtensionEmbedded": billing_embedded,
+        "quotaContract": "first_party_cli_backend_observed" if billing_embedded else "unavailable",
         "loginCommandDocumented": "login" in names,
         "authEvidence": "credential_file_only",
-        "exitCode": result.returncode,
+        "exitCode": top.returncode,
     }
 
 

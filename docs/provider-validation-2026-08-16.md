@@ -15,7 +15,7 @@
 |---|---|---|---|
 | Codex | `codex-cli 0.145.0`, auth file regular/owner 일치/`0600` | 공식 app-server `account/rateLimits/read` 성공. plan·primary window·reset·duration·credits field 관측 | QuotaBeacon LIVE 연결 가능 |
 | Claude | Claude Code `2.1.233`, host 환경 `claude auth status` 로그인 확인 | status-line은 설정돼 있으나 QuotaBeacon snapshot은 비활성·미설정 | 로그인 확인, quota bridge 필요 |
-| Grok | Grok Build `1.0.4 stable`, auth JSON valid/credential material 있음/미래 expiry 증거/`0600` | CLI 공개 command에 usage·quota·billing 없음 | 로그인 file 증거 확인, quota는 상태 전용 |
+| Grok | Grok Build `1.0.4 stable`, auth JSON valid/credential material 있음/미래 expiry 증거/`0600` | ACP `x.ai/billing`은 `-32601`; 공식 CLI billing backend GET은 HTTP 200 및 계약 field 관측 | `observed · Beta` LIVE 연결 가능 |
 | Z.ai GLM | `glm`, `zai` 독립 CLI 미검출. Claude 설정의 Z.ai endpoint/key mapping 없음. `glm-plan-usage` plugin 미설치 | 공식 bridge 입력이 없어 실행하지 않음 | 현재 shell/Claude 환경에서는 연결 미확인 |
 
 ## Codex 실계정 probe
@@ -43,8 +43,13 @@
 
 - auth file은 regular file, owner 일치, `0600`, valid JSON이다.
 - credential material과 아직 지나지 않은 expiration field가 존재한다는 boolean 증거만 확인했다.
-- token, expiry timestamp, 계정 정보는 출력·저장하지 않았다.
-- 공식 CLI help에는 `login`은 있으나 quota 조회 command가 없으므로 모델 호출이나 비공개 endpoint로 검증하지 않았다.
+- 공식 source와 설치 binary에서 `x.ai/billing`, `/billing?format=credits`, `creditUsagePercent` 계약을 확인했다.
+- 설치된 `grok agent stdio`를 initialize한 뒤 `x.ai/billing`을 호출했으나 `-32601 Method not found`였다. credential은 변경되지 않았다.
+- 공식 client가 사용하는 `GET https://cli-chat-proxy.grok.com/v1/billing?format=credits`를 별도 사용자 승인 후 호출했다.
+- HTTP 200과 `config`, `creditUsagePercent`, `currentPeriod`, reset, `prepaidBalance`, unified billing 증거 field의 존재만 기록했다.
+- token, expiry timestamp, user ID, 실제 quota·잔액, 원본 payload는 출력·저장하지 않았다.
+- 실행 전후 auth file의 SHA-256·mtime·mode는 모두 불변이었다.
+- 이 경로는 공개 stable API가 아니라 공식 client에서 관측된 계약이므로 `observed · Beta`로 표시하고 Grok Build 변경 시 재검증한다.
 
 ## GLM 검증
 
@@ -68,5 +73,5 @@
 
 1. Claude quota 연결: 기존 status-line 보존형 snapshot bridge 설치를 별도 승인 후 진행한다.
 2. GLM: 실제 로그인에 사용한 command/path 또는 공식 `glm-plan-usage` plugin 설치 여부를 확인한다.
-3. Grok: 공식 machine-readable quota command가 공개될 때까지 status-only를 유지한다.
+3. Grok: 현재 first-party CLI billing backend를 Beta LIVE 경로로 유지하고 client version 변경 시 schema·실계정 redacted probe를 재실행한다.
 4. Codex: 현재 read-only app-server 연결을 Beta LIVE 경로로 유지하고 client version 변경 시 schema test를 재실행한다.

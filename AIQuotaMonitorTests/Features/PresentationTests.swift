@@ -4,7 +4,7 @@ import XCTest
 final class PresentationTests: XCTestCase {
     func testUnavailableStatesHaveNoInventedWindows() async throws {
         for provider in ProviderID.allCases {
-            let state: ProviderState = provider == .grok || provider == .zai ? .unsupportedContract : .notConfigured
+            let state: ProviderState = provider == .zai ? .unsupportedContract : .notConfigured
             let result = await StateOnlyProvider(id: provider, state: state).fetchQuota()
             XCTAssertTrue(result.snapshot.windows.isEmpty)
             XCTAssertNil(result.snapshot.credits)

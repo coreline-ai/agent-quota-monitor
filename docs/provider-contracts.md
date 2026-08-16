@@ -18,7 +18,7 @@
 |---|---|---|---|---|
 | Claude | `documented` | Claude Code status-line JSON | 5시간·7일 사용률, reset; 각 window 독립 누락 가능 | 로그인 확인, snapshot bridge 전 |
 | Codex | `observed` | 공식 `codex app-server` JSON-RPC | primary·secondary, reset, duration, plan, credits | 실계정 read-only probe PASS, `codex-cli 0.145.0` |
-| Grok | `documented` UX / `experimental` machine contract | Settings → Usage | 공용 weekly pool, product breakdown, reset, extra credits | 상태 전용 |
+| Grok | `observed` | xAI 공식 Grok Build CLI billing backend | 공용 사용률, weekly/monthly 기간, reset, 선불 잔액 | 실계정 read-only probe PASS, Beta |
 | Z.ai | `documented` UX / `experimental` machine contract | 공식 usage-query plugin | 5시간·weekly quota 존재 | 상태 전용 |
 
 ## Claude
@@ -44,9 +44,14 @@
 ## Grok
 
 - 공식 FAQ는 유료 사용자의 단일 weekly pool, product별 breakdown, weekly reset, Extra Usage Credits UI를 설명한다.
-- 공개된 안정적인 read-only machine endpoint는 확인하지 못했다.
-- 브라우저 cookie와 비공개 endpoint 수집은 금지한다.
-- 제품은 `unsupportedContract` 상태를 반환하며 수치를 생성하지 않는다.
+- xAI 공식 Grok Build source와 설치 binary에서 CLI billing backend `GET https://cli-chat-proxy.grok.com/v1/billing?format=credits` 및 `config.creditUsagePercent`, `currentPeriod`, `billingPeriodEnd`, `prepaidBalance` 계약을 확인했다.
+- installed client: `grok 1.0.4 (d846eb93d94d) [stable]`.
+- 설치 버전의 `grok agent stdio`에 `x.ai/billing`을 호출하면 `-32601 Method not found`가 반환된다. 따라서 ACP RPC는 제품 경로로 사용하지 않고, 공식 client가 사용하는 first-party billing backend만 `observed · Beta`로 호출한다.
+- request는 GET 한 번으로 제한하며 bearer access token, CLI auth marker, user ID, client version header만 전송한다. redirect·cookie·response cache는 거부하고 refresh token은 선택·사용·전송하지 않는다.
+- parser는 `config.creditUsagePercent`를 우선 사용하고 구형 `monthlyLimit/used`는 fallback으로만 처리한다. 누락·범위 밖·0 denominator를 실제 0%로 만들지 않는다.
+- `2026-08-16` 승인된 실계정 probe에서 HTTP 200과 필요한 field 존재를 확인했고 credential SHA-256·mtime·mode는 불변이었다. 실제 값과 원본 response는 저장하지 않았다.
+- timeout: HTTP 전체 15초. client/source 계약 변경 시 synthetic fixture, unit test, redacted 실계정 probe를 다시 실행한다.
+- 브라우저 cookie, WebView, model call, auto-topup endpoint 사용은 금지한다.
 
 ## Z.ai
 
@@ -71,6 +76,6 @@
 
 - Codex: 공식 read-only rate-limit probe 성공, credential hash·mtime 불변.
 - Claude: host 로그인 확인. QuotaBeacon용 snapshot은 비활성이라 quota fixture는 미수집.
-- Grok: credential file 구조·권한·expiry 증거 확인. 공식 quota CLI command 미확인으로 상태 전용 유지.
+- Grok: 공식 CLI billing backend read-only probe 성공, 필요한 field 존재와 credential SHA-256·mtime·mode 불변 확인. `observed · Beta` LIVE 경로로 사용.
 - Z.ai: 현재 PATH·Claude 설정·plugin 목록에서 로그인 경로를 찾지 못해 상태 전용 유지.
 - 상세: [Provider 실환경 검증 보고서](provider-validation-2026-08-16.md)

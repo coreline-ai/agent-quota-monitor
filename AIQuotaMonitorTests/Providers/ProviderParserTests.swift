@@ -27,14 +27,44 @@ final class ProviderParserTests: XCTestCase {
         XCTAssertNil(partial.windows.first?.resetsAt)
     }
 
-    func testExperimentalParsersPreserveUnknownWithoutClaimingAvailability() throws {
+    func testGrokObservedParserAndExperimentalZAIParser() throws {
         let grok = try GrokQuotaParser().parse(fixture("Grok", "normal"), observedAt: observedAt)
-        XCTAssertEqual(grok.state, .unsupportedContract)
+        XCTAssertEqual(grok.state, .available)
         XCTAssertEqual(grok.windows.first?.kind, .sharedWeekly)
+        XCTAssertEqual(grok.windows.first?.usedRatio.value ?? -1, 0.41, accuracy: 0.0001)
+        XCTAssertEqual(grok.credits?.amount, Decimal(string: "12.00"))
+        XCTAssertEqual(grok.windows.first?.provenance.contract, .observed)
+
+        let grokPartial = try GrokQuotaParser().parse(fixture("Grok", "partial"), observedAt: observedAt)
+        XCTAssertEqual(grokPartial.state, .partial)
+        XCTAssertNil(grokPartial.windows.first?.resetsAt)
 
         let zai = try ZAIQuotaParser().parse(fixture("ZAI", "normal"), observedAt: observedAt)
         XCTAssertEqual(zai.state, .unsupportedContract)
         XCTAssertTrue(zai.windows.contains { $0.kind == .custom("future_window") })
+    }
+
+    func testGrokLegacyBillingFallbackAndInvalidPercent() throws {
+        let legacy = Data(#"{"config":{"monthlyLimit":{"val":10000},"used":{"val":2500},"billingPeriodEnd":"2026-09-01T00:00:00Z"}}"#.utf8)
+        let snapshot = try GrokQuotaParser().parse(legacy, observedAt: observedAt)
+        XCTAssertEqual(snapshot.state, .available)
+        XCTAssertEqual(snapshot.windows.first?.usedRatio.value ?? -1, 0.25, accuracy: 0.0001)
+        XCTAssertEqual(snapshot.windows.first?.kind, .custom("공용 크레딧"))
+
+        let invalid = Data(#"{"config":{"creditUsagePercent":101}}"#.utf8)
+        XCTAssertThrowsError(try GrokQuotaParser().parse(invalid, observedAt: observedAt)) {
+            XCTAssertEqual($0 as? ProviderErrorCode, .malformedPayload)
+        }
+
+        let missingBalanceValue = Data(#"{"config":{"creditUsagePercent":0,"prepaidBalance":{}}}"#.utf8)
+        let zeroUsage = try GrokQuotaParser().parse(missingBalanceValue, observedAt: observedAt)
+        XCTAssertEqual(zeroUsage.windows.first?.usedRatio.value, 0)
+        XCTAssertNil(zeroUsage.credits)
+
+        let negativeBalance = Data(#"{"config":{"creditUsagePercent":100,"prepaidBalance":{"val":-1}}}"#.utf8)
+        XCTAssertThrowsError(try GrokQuotaParser().parse(negativeBalance, observedAt: observedAt)) {
+            XCTAssertEqual($0 as? ProviderErrorCode, .malformedPayload)
+        }
     }
 
     func testMalformedFixturesFailTyped() {

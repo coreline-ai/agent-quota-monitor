@@ -16,7 +16,8 @@
 | Z.ai Usage Query Plugin 문서 | 공식 문서 | GLM quota 기능과 사용자 흐름 확인 | plugin source·payload fixture 복사 | 사용 가능 |
 | Claude Code statusline schema | 공식 문서 | `five_hour`, `seven_day`, null/reset 의미 확인 | 예제 payload·script 복사 | 사용 가능 |
 | 로컬 Codex `0.145.0` app-server 생성 schema | 공식 client schema | `account/rateLimits/read`, primary/secondary/credits 확인 | 계정 응답·credential 저장 | 사용 가능 |
-| xAI Grok FAQ·Models | 공식 문서 | weekly usage UX와 Grok Build 가격 근거 확인 | cookie·비공개 endpoint 수집 | 사용 가능 |
+| xAI Grok FAQ·Models | 공식 문서 | weekly usage UX와 Grok Build 가격 근거 확인 | cookie·model endpoint 수집 | 사용 가능 |
+| xAI Grok Build billing extension | 공식 client source | first-party billing URL·header·response field 확인 | source code·fixture 복사, billing 외 endpoint 호출 | 계약 관찰만 |
 | Z.ai Coding Plan overview·policy·pricing | 공식 문서 | 5시간/주간 limit, 지원 도구 제한, 가격 catalog 확인 | 지원 밖 Coding endpoint 호출 | 사용 가능 |
 | OpenAI·Anthropic model pricing | 공식 문서 | 날짜가 있는 API 정가 catalog 작성 | 구독 결제액으로 오표시 | 사용 가능 |
 | Apple Developer 문서 | 공식 문서 | status item, Keychain, 서명, 공증 검증 | 해당 없음 | 사용 가능 |
@@ -57,6 +58,6 @@ ID:
 |---|---|---|---|---|---|
 | REF-P2-CLAUDE | 2026-08-16 | https://code.claude.com/docs/en/statusline | 5시간/7일 사용률, epoch reset, window별 누락 | `Providers/Claude/**` | 사용 안 함 |
 | REF-P2-CODEX | 2026-08-16 | 로컬 `codex app-server generate-json-schema` | `account/rateLimits/read`, primary/secondary/credits | `Providers/Codex/**` | 사용 안 함 |
-| REF-P2-GROK | 2026-08-16 | https://docs.x.ai/grok/faq | weekly pool, product breakdown, reset, extra credits UX | 상태 전용 + synthetic parser | 사용 안 함 |
+| REF-P2-GROK | 2026-08-16 | https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/src/extensions/billing.rs | first-party billing GET, 사용률·기간·reset·선불 잔액 | 독립 Swift adapter + synthetic parser | 사용 안 함 |
 | REF-P2-ZAI | 2026-08-16 | https://docs.z.ai/devpack/overview | 5시간/주간 Coding Plan quota와 지원 도구 제한 | 상태 전용 + synthetic parser | 사용 안 함 |
 | REF-P4-PRICE | 2026-08-16 | Provider별 공식 model pricing | 날짜·출처·alias 기반 API 정가 | `Resources/PricingCatalog.json` | 사용 안 함 |

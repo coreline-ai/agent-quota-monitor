@@ -1,3 +1,6 @@
 {
-  "weekly": { "used_percentage": 9 }
+  "config": {
+    "creditUsagePercent": 9,
+    "isUnifiedBillingUser": true
+  }
 }

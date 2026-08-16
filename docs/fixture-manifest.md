@@ -8,7 +8,7 @@
 |---|---|---|---|---|---|
 | Claude | `claude-{normal,partial,errors,malformed}.json` | synthetic | 공식 status-line field | 개인 field 미포함 | 미실행 |
 | Codex | `codex-{normal,partial,errors,malformed}.json` | synthetic | `codex-cli 0.145.0` 생성 schema | ID·workspace·account 미포함 | 미실행 |
-| Grok | `grok-{normal,partial,errors,malformed}.json` | synthetic | 공식 Settings Usage 설명 | 계정 field 미포함 | machine contract 미확정 |
+| Grok | `grok-{normal,partial,errors,malformed}.json` | synthetic | xAI 공식 Grok Build billing response field | token·user ID·실제 quota 미포함 | field 존재 실계정 검증 |
 | ZAI | `zai-{normal,partial,errors,malformed}.json` | synthetic | 공식 usage-query UX | key·account 미포함 | machine contract 미확정 |
 
 ## Schema fingerprint
@@ -25,9 +25,9 @@ be33fe136a9d446471f73f372d18e791bcb9f1ec5293db61bc069dee583da397  Claude/claude-
 8e6a20103356d06d08edf396f76cbcf2b87dd9b35e3964659ef08efd71c56aa9  Codex/codex-normal.json
 4d79dc39a8242ed27c282a9bad4e52a8cfed0e367b211ec7307014b595d31f5e  Codex/codex-partial.json
 97351cf842b8ecc5a5760f069b8d29590e281ce06be5fc7d4ec2b338ab6d66c1  Grok/grok-errors.json
-4c15a2a3a6c4718a4fc8ac41b41d57348a4c53277cb6f578120d5cb32c6b47ff  Grok/grok-malformed.json
-a8552a75863037fa9074df4a22869fe6088eedb29be3e85d02700bb3cb902fda  Grok/grok-normal.json
-44fda0a6ccdb5e091c38a8396cb924ab92e9ffdaf294cf500bf9cc4cde37b959  Grok/grok-partial.json
+3eb6bd8a35e6f35466327f4af1dcb9e77e2ba2330e95a694b7a0cc354b7e7608  Grok/grok-malformed.json
+303e14bfd56d0b974f8568aa443cbb9a31df5d84176dc0a8ca268c92803ee1b9  Grok/grok-normal.json
+0c5da2186829681997c8f2e4ab3b7aaf3c77b3ea1c2d198c90e734914d7689a2  Grok/grok-partial.json
 02ba6d331db44db9acc9f2c8e3083495254b50f83c5f9d1e05ef64a26683bcdf  ZAI/zai-errors.json
 13ac8a7b6d413cdf6acbab6735799433f5c949c8789b856a2670d049e7900cf5  ZAI/zai-malformed.json
 085898be9011affb0486259c60e2d99a860cb9de6432678f5a5ddc8f9ae93a94  ZAI/zai-normal.json

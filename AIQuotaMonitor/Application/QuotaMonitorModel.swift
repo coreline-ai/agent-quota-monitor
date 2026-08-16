@@ -21,7 +21,7 @@ final class QuotaMonitorModel: ObservableObject {
         snapshots = ProviderID.allCases.map { provider in
             .unavailable(
                 provider,
-                state: provider == .claude || provider == .codex ? .notConfigured : .unsupportedContract
+                state: provider == .zai ? .unsupportedContract : .notConfigured
             )
         }
         coordinator = RefreshCoordinator(
@@ -82,14 +82,18 @@ final class QuotaMonitorModel: ObservableObject {
         codexEnabled: Bool,
         codexExecutablePath: String,
         claudeEnabled: Bool,
-        claudeSnapshotPath: String
+        claudeSnapshotPath: String,
+        grokEnabled: Bool,
+        grokAuthPath: String
     ) async {
         await coordinator.cancelAll()
         let providers = Self.providers(
             codexEnabled: codexEnabled,
             codexExecutablePath: codexExecutablePath,
             claudeEnabled: claudeEnabled,
-            claudeSnapshotPath: claudeSnapshotPath
+            claudeSnapshotPath: claudeSnapshotPath,
+            grokEnabled: grokEnabled,
+            grokAuthPath: grokAuthPath
         )
         coordinator = RefreshCoordinator(providers: providers, store: SnapshotStore())
         isRefreshing = false
@@ -163,7 +167,10 @@ final class QuotaMonitorModel: ObservableObject {
             codexEnabled: defaults.bool(forKey: "codex.readOnlyEnabled"),
             codexExecutablePath: defaults.string(forKey: "codex.executablePath") ?? "/opt/homebrew/bin/codex",
             claudeEnabled: defaults.bool(forKey: "claude.snapshotEnabled"),
-            claudeSnapshotPath: defaults.string(forKey: "claude.snapshotPath") ?? ""
+            claudeSnapshotPath: defaults.string(forKey: "claude.snapshotPath") ?? "",
+            grokEnabled: defaults.bool(forKey: "grok.readOnlyEnabled"),
+            grokAuthPath: defaults.string(forKey: "grok.authPath")
+                ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: ".grok/auth.json").path
         )
     }
 
@@ -179,7 +186,9 @@ final class QuotaMonitorModel: ObservableObject {
         codexEnabled: Bool,
         codexExecutablePath: String,
         claudeEnabled: Bool,
-        claudeSnapshotPath: String
+        claudeSnapshotPath: String,
+        grokEnabled: Bool,
+        grokAuthPath: String
     ) -> [any QuotaProvider] {
         let claude: any QuotaProvider
         if claudeEnabled, !claudeSnapshotPath.isEmpty {
@@ -198,10 +207,21 @@ final class QuotaMonitorModel: ObservableObject {
         } else {
             codex = StateOnlyProvider(id: .codex, state: .notConfigured)
         }
+
+        let grok: any QuotaProvider
+        if grokEnabled, !grokAuthPath.isEmpty {
+            let url = URL(fileURLWithPath: grokAuthPath).standardizedFileURL
+            grok = GrokBillingProvider(
+                authURL: url,
+                validator: CredentialFileValidator(allowedRoots: [url.deletingLastPathComponent()])
+            )
+        } else {
+            grok = StateOnlyProvider(id: .grok, state: .notConfigured)
+        }
         return [
             claude,
             codex,
-            StateOnlyProvider(id: .grok, state: .unsupportedContract),
+            grok,
             StateOnlyProvider(id: .zai, state: .unsupportedContract)
         ]
     }

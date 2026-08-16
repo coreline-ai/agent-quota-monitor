@@ -10,6 +10,9 @@ struct DashboardSettingsView: View {
     @AppStorage("codex.executablePath") private var codexPath = "/opt/homebrew/bin/codex"
     @AppStorage("claude.snapshotEnabled") private var claudeEnabled = false
     @AppStorage("claude.snapshotPath") private var claudePath = ""
+    @AppStorage("grok.readOnlyEnabled") private var grokEnabled = false
+    @AppStorage("grok.authPath") private var grokAuthPath = FileManager.default.homeDirectoryForCurrentUser
+        .appending(path: ".grok/auth.json").path
     @State private var zaiKey = ""
     @State private var keyStatus = "저장 안 됨"
     @State private var notificationStatus = "권한 미확인"
@@ -52,13 +55,18 @@ struct DashboardSettingsView: View {
                     Toggle("Claude status snapshot 읽기", isOn: $claudeEnabled)
                     TextField("0600 snapshot 파일 절대 경로", text: $claudePath)
                         .disabled(!claudeEnabled)
+                    Toggle("Grok CLI billing quota 읽기 · Beta", isOn: $grokEnabled)
+                    TextField("Grok auth.json 절대 경로", text: $grokAuthPath)
+                        .disabled(!grokEnabled)
                     Button("승인하고 연결 적용") {
                         Task {
                             await model.applyProviderConfiguration(
                                 codexEnabled: codexEnabled,
                                 codexExecutablePath: codexPath,
                                 claudeEnabled: claudeEnabled,
-                                claudeSnapshotPath: claudePath
+                                claudeSnapshotPath: claudePath,
+                                grokEnabled: grokEnabled,
+                                grokAuthPath: grokAuthPath
                             )
                         }
                     }

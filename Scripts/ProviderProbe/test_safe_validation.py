@@ -93,6 +93,50 @@ class SafeValidationTests(unittest.TestCase):
         text = "Usage: grok [COMMAND]\n\nCommands:\n  login   Sign in\n  doctor  Diagnose\n\nOptions:\n"
         self.assertEqual(subject.command_names(text), ["login", "doctor"])
 
+    def test_file_contains_marker_across_chunk_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grok"
+            path.write_bytes(b"a" * (1024 * 1024 - 3) + b"x.ai/billing")
+            self.assertTrue(subject.file_contains_marker(path, b"x.ai/billing"))
+            self.assertFalse(subject.file_contains_marker(path, b"private/method"))
+
+    @mock.patch("safe_validation.file_contains_marker", return_value=True)
+    @mock.patch("safe_validation.run_command")
+    def test_grok_capability_checks_nested_agent_stdio(self, run_command: mock.Mock, _marker: mock.Mock) -> None:
+        run_command.side_effect = [
+            subject.subprocess.CompletedProcess(
+                ["grok", "--help"], 0,
+                stdout="Commands:\n  login   Sign in\n  agent   Run agent\n", stderr="",
+            ),
+            subject.subprocess.CompletedProcess(
+                ["grok", "agent", "--help"], 0,
+                stdout="Commands:\n  stdio   Run over stdio\n", stderr="",
+            ),
+        ]
+        result = subject.grok_capability_summary("/tmp/grok")
+        self.assertFalse(result["quotaCommandDocumented"])
+        self.assertTrue(result["agentStdioDocumented"])
+        self.assertTrue(result["billingExtensionEmbedded"])
+        self.assertEqual(result["quotaContract"], "first_party_cli_backend_observed")
+
+    @mock.patch("safe_validation.file_contains_marker", return_value=False)
+    @mock.patch("safe_validation.run_command")
+    def test_grok_capability_does_not_invent_contract_without_billing_marker(
+        self, run_command: mock.Mock, _marker: mock.Mock
+    ) -> None:
+        run_command.side_effect = [
+            subject.subprocess.CompletedProcess(
+                ["grok", "--help"], 0, stdout="Commands:\n  agent   Run agent\n", stderr=""
+            ),
+            subject.subprocess.CompletedProcess(
+                ["grok", "agent", "--help"], 0, stdout="Commands:\n  stdio   Run over stdio\n", stderr=""
+            ),
+        ]
+        result = subject.grok_capability_summary("/tmp/grok")
+        self.assertTrue(result["agentStdioDocumented"])
+        self.assertFalse(result["billingExtensionEmbedded"])
+        self.assertEqual(result["quotaContract"], "unavailable")
+
     @mock.patch("safe_validation.shutil.which", return_value="/tmp/codex")
     @mock.patch("safe_validation.run_command")
     def test_safe_version_ignores_numeric_warning(self, run_command: mock.Mock, _which: mock.Mock) -> None:

@@ -9,7 +9,7 @@
 | Claude | `claude-{normal,partial,errors,malformed}.json`, `claude-oauth-{normal,partial}.json` | synthetic | 공식 statusLine + 관측된 OAuth usage field | token·계정·실제 quota 미포함 | OAuth field 존재 실계정 검증 |
 | Codex | `codex-{normal,partial,errors,malformed}.json` | synthetic | `codex-cli 0.145.0` 생성 schema | ID·workspace·account 미포함 | 미실행 |
 | Grok | `grok-{normal,partial,errors,malformed}.json` | synthetic | xAI 공식 Grok Build billing response field | token·user ID·실제 quota 미포함 | field 존재 실계정 검증 |
-| ZAI | `zai-{normal,partial,errors,malformed}.json` | synthetic | 공식 usage-query UX | key·account 미포함 | machine contract 미확정 |
+| ZAI | `zai-{normal,partial,errors,malformed}.json` | synthetic | 공식 `glm-plan-usage` `0.0.1` Quota limit output | token·Model/Tool usage·account·실제 percentage 미포함 | 공식 script field 존재 및 설치 앱 LIVE 검증 |
 
 ## Schema fingerprint
 
@@ -32,8 +32,8 @@ e33807fe38d8330e55f529863e1a6b9102fba931f2e2a23e41ce845fa13c8fc8  Claude/claude-
 0c5da2186829681997c8f2e4ab3b7aaf3c77b3ea1c2d198c90e734914d7689a2  Grok/grok-partial.json
 02ba6d331db44db9acc9f2c8e3083495254b50f83c5f9d1e05ef64a26683bcdf  ZAI/zai-errors.json
 13ac8a7b6d413cdf6acbab6735799433f5c949c8789b856a2670d049e7900cf5  ZAI/zai-malformed.json
-085898be9011affb0486259c60e2d99a860cb9de6432678f5a5ddc8f9ae93a94  ZAI/zai-normal.json
-219b89aa765374fb764678e455d59c0810de2e61b702f5f668fc0a0ac3f81493  ZAI/zai-partial.json
+dbf14fbdcf33d6656bb561b1e27a8673e9c6ea010ed6dbef9f04e65797e9206f  ZAI/zai-normal.json
+db4cdea4c443720b5120267b68365c312bb095d6dfa6d9639a1fb190f5f08d3e  ZAI/zai-partial.json
 ```
 
 ## 직접 fixture 추가 조건

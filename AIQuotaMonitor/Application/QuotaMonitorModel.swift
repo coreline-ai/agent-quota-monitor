@@ -19,10 +19,7 @@ final class QuotaMonitorModel: ObservableObject {
     ) {
         historyStore = HistoryStore(fileURL: Self.defaultHistoryURL())
         snapshots = ProviderID.allCases.map { provider in
-            .unavailable(
-                provider,
-                state: provider == .zai ? .unsupportedContract : .notConfigured
-            )
+            .unavailable(provider, state: .notConfigured)
         }
         coordinator = RefreshCoordinator(
             providers: providers ?? Self.configuredProviders(defaults: .standard),
@@ -83,7 +80,8 @@ final class QuotaMonitorModel: ObservableObject {
         codexExecutablePath: String,
         claudeEnabled: Bool,
         grokEnabled: Bool,
-        grokAuthPath: String
+        grokAuthPath: String,
+        zaiEnabled: Bool
     ) async {
         await coordinator.cancelAll()
         let providers = Self.providers(
@@ -91,7 +89,8 @@ final class QuotaMonitorModel: ObservableObject {
             codexExecutablePath: codexExecutablePath,
             claudeEnabled: claudeEnabled,
             grokEnabled: grokEnabled,
-            grokAuthPath: grokAuthPath
+            grokAuthPath: grokAuthPath,
+            zaiEnabled: zaiEnabled
         )
         coordinator = RefreshCoordinator(providers: providers, store: SnapshotStore())
         isRefreshing = false
@@ -133,6 +132,9 @@ final class QuotaMonitorModel: ObservableObject {
     }
 
     private func deliverQuotaNotificationsIfAllowed() async {
+        guard ProcessInfo.processInfo.environment["AIQUOTAMONITOR_UI_TEST"] != "1" else {
+            return
+        }
         let defaults = UserDefaults.standard
         guard defaults.bool(forKey: "notifications.authorized"),
               defaults.object(forKey: "notifications.enabled") == nil || defaults.bool(forKey: "notifications.enabled") else {
@@ -170,7 +172,8 @@ final class QuotaMonitorModel: ObservableObject {
             claudeEnabled: claudeEnabled,
             grokEnabled: defaults.bool(forKey: "grok.readOnlyEnabled"),
             grokAuthPath: defaults.string(forKey: "grok.authPath")
-                ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: ".grok/auth.json").path
+                ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: ".grok/auth.json").path,
+            zaiEnabled: defaults.bool(forKey: "zai.readOnlyEnabled")
         )
     }
 
@@ -187,7 +190,8 @@ final class QuotaMonitorModel: ObservableObject {
         codexExecutablePath: String,
         claudeEnabled: Bool,
         grokEnabled: Bool,
-        grokAuthPath: String
+        grokAuthPath: String,
+        zaiEnabled: Bool
     ) -> [any QuotaProvider] {
         let claude: any QuotaProvider
         if claudeEnabled {
@@ -213,11 +217,18 @@ final class QuotaMonitorModel: ObservableObject {
         } else {
             grok = StateOnlyProvider(id: .grok, state: .notConfigured)
         }
+
+        let zai: any QuotaProvider
+        if zaiEnabled {
+            zai = ZAIPluginUsageProvider()
+        } else {
+            zai = StateOnlyProvider(id: .zai, state: .notConfigured)
+        }
         return [
             claude,
             codex,
             grok,
-            StateOnlyProvider(id: .zai, state: .unsupportedContract)
+            zai
         ]
     }
 }

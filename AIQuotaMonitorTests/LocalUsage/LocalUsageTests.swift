@@ -16,9 +16,10 @@ final class LocalUsageTests: XCTestCase {
     }
 
     func testPricingEstimateAndUnknownModel() throws {
-        let catalogURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-            .appending(path: "AIQuotaMonitor/Resources/PricingCatalog.json")
+        guard let catalogURL = Bundle.main.url(forResource: "PricingCatalog", withExtension: "json") else {
+            XCTFail("Missing PricingCatalog.json resource")
+            return
+        }
         let catalog = try JSONDecoder().decode(PricingCatalog.self, from: Data(contentsOf: catalogURL))
         let sample = LocalUsageSample(
             id: "one",

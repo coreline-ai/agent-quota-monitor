@@ -8,55 +8,42 @@ struct ZAIQuotaParser: QuotaPayloadParser {
         do { payload = try JSONDecoder().decode(Payload.self, from: data) }
         catch { throw ProviderErrorCode.malformedPayload }
         let provenance = ValueProvenance(
-            source: .syntheticFixture,
-            contract: .experimental,
+            source: .officialCLI,
+            contract: .observed,
             observedAt: observedAt,
-            freshness: .unknown
+            freshness: .live
         )
         let windows = try payload.limits.compactMap { value -> QuotaWindow? in
-            guard let percent = value.usedPercentage else { return nil }
-            let kind: QuotaWindowKind = switch value.type {
-            case "session": .session
-            case "weekly": .sevenDay
-            default: .custom(value.type)
+            guard let percent = value.percentage else { return nil }
+            let kind: QuotaWindowKind
+            switch value.type {
+            case "Token usage(5 Hour)", "TOKENS_LIMIT": kind = .fiveHour
+            case "MCP usage(1 Month)", "TIME_LIMIT": kind = .custom("MCP 월간")
+            default: return nil
             }
             return try QuotaWindow(
                 kind: kind,
                 usedRatio: QuotaRatio(percent: percent),
-                resetsAt: value.resetsAt.map { Date(timeIntervalSince1970: $0) },
+                resetsAt: nil,
                 provenance: provenance
             )
         }
-        let credits = payload.credits.map {
-            CreditBalance(
-                amount: Decimal(string: $0.balance),
-                unlimited: false,
-                provenance: provenance
-            )
-        }
+        guard !windows.isEmpty else { throw ProviderErrorCode.malformedPayload }
         return ProviderSnapshot(
             provider: provider,
-            state: .unsupportedContract,
+            state: windows.count >= 2 ? .available : .partial,
             windows: windows,
-            credits: credits,
+            credits: nil,
             lastAttempt: nil,
-            lastSuccessAt: nil
+            lastSuccessAt: observedAt
         )
     }
 
     private struct Payload: Decodable {
         let limits: [Limit]
-        let credits: Credits?
     }
     private struct Limit: Decodable {
         let type: String
-        let usedPercentage: Double?
-        let resetsAt: TimeInterval?
-        enum CodingKeys: String, CodingKey {
-            case type
-            case usedPercentage = "used_percentage"
-            case resetsAt = "resets_at"
-        }
+        let percentage: Double?
     }
-    private struct Credits: Decodable { let balance: String }
 }

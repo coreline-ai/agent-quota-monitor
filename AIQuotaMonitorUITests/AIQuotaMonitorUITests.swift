@@ -34,15 +34,28 @@ final class AIQuotaMonitorUITests: XCTestCase {
         app.staticTexts["연결"].click()
         XCTAssertTrue(app.staticTexts["dashboard.connections.title"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["connections.apply"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["connections.zai.toggle"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["connections.zai.evidence"].exists)
 
         app.staticTexts["한도"].click()
         XCTAssertTrue(app.staticTexts["dashboard.limits.title"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.descendants(matching: .any)["limits.provider.claude"].exists)
+        let zaiPanel = app.descendants(matching: .any)["limits.provider.zai"]
+        XCTAssertTrue(zaiPanel.waitForExistence(timeout: 20))
+        let zaiTexts = app.staticTexts.matching(identifier: "limits.provider.zai")
+        XCTAssertTrue(
+            zaiTexts.matching(NSPredicate(format: "value == %@", "LIVE")).firstMatch
+                .waitForExistence(timeout: 20)
+        )
+        XCTAssertTrue(zaiTexts.matching(NSPredicate(format: "value BEGINSWITH %@", "5시간")).firstMatch.exists)
+        XCTAssertTrue(zaiTexts.matching(NSPredicate(format: "value BEGINSWITH %@", "MCP 월간")).firstMatch.exists)
         let limitsScroll = app.scrollViews["dashboard.limits"]
         XCTAssertTrue(limitsScroll.exists)
         XCTAssertGreaterThan(limitsScroll.frame.minY, app.windows.firstMatch.frame.minY + 40)
         writeScreenshot(app.windows.firstMatch, name: "quotabeacon-limits-qa")
         limitsScroll.swipeUp()
+        limitsScroll.swipeUp()
+        writeScreenshot(app.windows.firstMatch, name: "quotabeacon-glm-live-qa")
         XCTAssertTrue(app.buttons["dashboard.refresh"].isHittable)
 
         app.staticTexts["추세"].click()

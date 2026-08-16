@@ -9,6 +9,11 @@ struct ProviderConnectionsView: View {
     @State private var claudeEnabled = false
     @State private var grokEnabled = false
     @State private var grokAuthPath = ""
+    @State private var zaiEnabled = false
+    @State private var zaiEvidence = ZAIConnectionEvidence(
+        ready: false,
+        message: "GLM 연결 환경을 확인하는 중입니다."
+    )
     @State private var didLoad = false
     @State private var isApplying = false
     @State private var applyStatus = ""
@@ -72,6 +77,16 @@ struct ProviderConnectionsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                SignalPanel(title: "Z.ai GLM · Beta") {
+                    Toggle("공식 GLM Usage Query 읽기", isOn: $zaiEnabled)
+                        .accessibilityIdentifier("connections.zai.toggle")
+                    connectionEvidence(zaiEvidence.message, available: zaiEvidence.ready)
+                        .accessibilityIdentifier("connections.zai.evidence")
+                    Text("기존 claude-glm 프로필과 Z.ai 공식 glm-plan-usage 플러그인을 자동 탐지합니다. 공식 script를 새로고침당 최대 1회 실행하며 모델 호출·로그인·credential 변경은 하지 않습니다.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 SignalPanel(title: "명시적 승인") {
                     HStack {
                         Button(isApplying ? "적용 중…" : "읽기 전용 연결 적용") {
@@ -86,6 +101,7 @@ struct ProviderConnectionsView: View {
                             codexEnabled = false
                             claudeEnabled = false
                             grokEnabled = false
+                            zaiEnabled = false
                             Task { await applyConfiguration() }
                         }
                         .disabled(isApplying)
@@ -102,6 +118,14 @@ struct ProviderConnectionsView: View {
         }
         .accessibilityIdentifier("dashboard.connections")
         .onAppear { loadConfigurationIfNeeded() }
+        .onChange(of: zaiEnabled) { _, enabled in
+            zaiEvidence = enabled
+                ? ZAIConnectionEvidence.inspect()
+                : ZAIConnectionEvidence(
+                    ready: false,
+                    message: "연결을 켜면 공식 plugin과 claude-glm 프로필을 확인합니다."
+                )
+        }
     }
 
     @ViewBuilder
@@ -124,6 +148,13 @@ struct ProviderConnectionsView: View {
         grokEnabled = defaults.bool(forKey: "grok.readOnlyEnabled")
         grokAuthPath = defaults.string(forKey: "grok.authPath")
             ?? ProviderConnectionDefaults.grokAuthPath
+        zaiEnabled = defaults.bool(forKey: "zai.readOnlyEnabled")
+        zaiEvidence = zaiEnabled
+            ? ZAIConnectionEvidence.inspect()
+            : ZAIConnectionEvidence(
+                ready: false,
+                message: "연결을 켜면 공식 plugin과 claude-glm 프로필을 확인합니다."
+            )
     }
 
     private func applyConfiguration() async {
@@ -141,13 +172,15 @@ struct ProviderConnectionsView: View {
         defaults.set(claudeEnabled, forKey: "claude.readOnlyEnabled")
         defaults.set(grokEnabled, forKey: "grok.readOnlyEnabled")
         defaults.set(normalizedGrokPath, forKey: "grok.authPath")
+        defaults.set(zaiEnabled, forKey: "zai.readOnlyEnabled")
 
         await model.applyProviderConfiguration(
             codexEnabled: codexEnabled,
             codexExecutablePath: normalizedCodexPath,
             claudeEnabled: claudeEnabled,
             grokEnabled: grokEnabled,
-            grokAuthPath: normalizedGrokPath
+            grokAuthPath: normalizedGrokPath,
+            zaiEnabled: zaiEnabled
         )
 
         let requested = model.snapshots.filter { snapshot in
@@ -155,7 +188,7 @@ struct ProviderConnectionsView: View {
             case .codex: codexEnabled
             case .claude: claudeEnabled
             case .grok: grokEnabled
-            case .zai: false
+            case .zai: zaiEnabled
             }
         }
         applyStatus = requested.isEmpty

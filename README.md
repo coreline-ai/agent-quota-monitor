@@ -14,7 +14,7 @@ QuotaBeacon은 Codex·Claude Code·Grok Build·Z.ai GLM Coding Plan의 구독 qu
 - Codex는 사용자가 설정에서 명시적으로 승인하면 공식 `codex app-server`의 read-only rate-limit method만 사용합니다.
 - Claude는 사용자가 연결을 승인하면 기존 Claude Code 로그인을 macOS Keychain에서 자동 탐색하고 Anthropic usage endpoint를 GET 전용으로 조회합니다. 별도 경로·statusLine 설정은 필요하지 않으며 이 경로는 `observed · Beta`입니다.
 - Grok은 사용자가 명시적으로 승인하면 `grok login`의 `0600` credential을 읽기 전용으로 사용해 xAI 공식 CLI billing backend에서 주간 사용률·reset·선불 잔액을 조회합니다. 이 경로는 `observed · Beta`입니다.
-- Z.ai는 안전한 독립 앱용 machine contract가 확정되기 전까지 수치를 만들지 않습니다.
+- Z.ai는 사용자가 연결을 승인하면 기존 `claude-glm` profile과 Z.ai 공식 `glm-plan-usage` plugin을 자동 탐지해 5시간 token·월간 MCP 사용률을 읽습니다. 공식 plugin output 중 quota section만 사용하며 이 경로는 `observed · Beta`입니다.
 - quota 값마다 출처·계약 등급·관측 시각·최신성·reset을 보존합니다.
 - 상세 창에서 개요, 연결, 한도, 추세, 데이터 소스, 설정을 제공합니다.
 - 원본 payload·프롬프트·응답·계정 ID를 저장하지 않고 redacted JSON/CSV만 내보냅니다.
@@ -37,6 +37,7 @@ Scripts/ProviderProbe/fixture_guard.py scan
 python3 Scripts/ProviderProbe/test_safe_validation.py
 python3 Scripts/ProviderProbe/test_claude_oauth_usage_probe.py
 python3 Scripts/ProviderProbe/test_grok_billing_probe.py
+python3 Scripts/ProviderProbe/test_glm_plugin_usage_probe.py
 Scripts/audit_originality.sh
 Scripts/security_audit.py
 Scripts/build_release.sh
@@ -46,16 +47,18 @@ Scripts/package_release.sh
 ## 연결 안전장치
 
 1. 앱은 기본적으로 모든 credential 기반 Provider 연결을 끈 상태로 시작합니다.
-2. 상세 창의 **왼쪽 사이드바 → 연결** 또는 사이드바 하단의 **Provider 연결** 버튼에서 경로를 확인한 뒤 **읽기 전용 연결 적용**을 눌러 명시적으로 활성화합니다.
+2. 상세 창의 **왼쪽 사이드바 → 연결** 또는 사이드바 하단의 **Provider 연결** 버튼에서 경로를 확인한 뒤 **읽기 전용 연결 적용**을 눌러 명시적으로 활성화합니다. GLM도 같은 화면에 별도 toggle과 공식 plugin/profile 탐지 상태가 표시됩니다.
 3. Codex 실행 파일은 일반 설치 경로와 `~/.nvm/versions/node/*/bin/codex`에서 자동 탐색합니다.
 4. Claude 연결을 켜면 `Claude Code-credentials` Keychain 항목에서 access token만 메모리로 선택합니다. 별도 파일 경로나 statusLine bridge를 설치하지 않습니다.
 5. Claude adapter는 `GET https://api.anthropic.com/api/oauth/usage`만 호출하고 성공 응답을 최소 180초 재사용하며 `429`에서는 backoff합니다.
-6. 로그인, OAuth refresh, browser cookie import, 모델 호출, credit 소비, credential write-back은 하지 않습니다. Claude·Grok adapter 모두 refresh token을 선택·사용·전송하지 않습니다.
-7. 실계정 probe와 Developer ID 공증은 별도 승인이 필요한 외부 단계입니다. 개인 Mac에서 직접 사용하는 현재 설치본은 Universal ad-hoc 서명으로 동작합니다.
+6. GLM adapter는 shell을 실행하지 않고 `claude-glm` alias에서 Z.ai base URL과 auth token만 선택해 설치된 공식 plugin script에 전달합니다. script는 refresh당 최대 1회 실행하고 성공 결과를 5분 재사용하며, Model/Tool usage output은 즉시 버리고 quota JSON만 정규화합니다.
+7. 로그인, OAuth refresh, browser cookie import, 모델 호출, credit 소비, credential write-back은 하지 않습니다. Claude·Grok adapter 모두 refresh token을 선택·사용·전송하지 않습니다.
+8. 실계정 probe와 Developer ID 공증은 별도 승인이 필요한 외부 단계입니다. 개인 Mac에서 직접 사용하는 현재 설치본은 Universal ad-hoc 서명으로 동작합니다.
 
 ## 문서
 
 - [Reset Bands 추세 그래프 개발 계획](dev-plan/implement_20260816_221218.md)
+- [GLM 공식 plugin 연결 개발 계획](dev-plan/implement_20260816_230307.md)
 - [Beacon Ledger GUI 개발 계획](dev-plan/implement_20260816_211400.md)
 - [현재 Claude 자동 연결 개발 계획](dev-plan/implement_20260816_203449.md)
 - [정본 전체 개발 계획](dev-plan/implement_20260816_133341.md)

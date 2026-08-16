@@ -56,7 +56,7 @@ struct DataSourcesView: View {
         switch provider {
         case .claude: .observed
         case .codex, .grok: .observed
-        case .zai: .experimental
+        case .zai: .observed
         }
     }
 
@@ -65,7 +65,7 @@ struct DataSourcesView: View {
         case .claude: "Claude Code Keychain · read-only OAuth usage"
         case .codex: "공식 CLI 계정 상태 · read-only"
         case .grok: "grok login credential · read-only CLI billing"
-        case .zai: "수동 Keychain · endpoint 미호출"
+        case .zai: "claude-glm profile · official usage plugin"
         }
     }
 

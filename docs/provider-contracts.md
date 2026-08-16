@@ -19,7 +19,7 @@
 | Claude | `observed` | Claude Code macOS Keychain + Anthropic OAuth usage GET | 5시간·7일·Fable 주간 사용률과 reset; 각 window 독립 누락 가능 | 실계정 read-only probe 및 설치 앱 LIVE PASS, Beta |
 | Codex | `observed` | 공식 `codex app-server` JSON-RPC | primary·secondary, reset, duration, plan, credits | 실계정 read-only probe PASS, `codex-cli 0.145.0` |
 | Grok | `observed` | xAI 공식 Grok Build CLI billing backend | 공용 사용률, weekly/monthly 기간, reset, 선불 잔액 | 실계정 read-only probe PASS, Beta |
-| Z.ai | `documented` UX / `experimental` machine contract | 공식 usage-query plugin | 5시간·weekly quota 존재 | 상태 전용 |
+| Z.ai | `observed` | `claude-glm` profile + 공식 `glm-plan-usage` plugin `0.0.1` | 5시간 token·월간 MCP 사용률, reset 없음 | 실계정 read-only probe 및 설치 앱 LIVE PASS, Beta |
 
 ## Claude
 
@@ -58,11 +58,14 @@
 
 ## Z.ai
 
-- 공식 문서는 5시간·weekly limit과 공식 usage-query plugin을 제공한다.
-- Coding Plan은 공식 지원 도구에서만 사용하도록 제한된다.
-- QuotaBeacon은 모델/API 호출로 quota를 조회하지 않는다.
-- 공개된 독립 앱용 machine contract를 확인하기 전에는 `unsupportedContract` 상태를 반환한다.
-- 사용자가 입력한 key는 Keychain에만 저장하지만 quota endpoint 확인 전에는 호출하지 않는다.
+- 공식 문서와 `zai-org/zai-coding-plugins`는 Claude Code용 `glm-plan-usage` plugin과 `/glm-plan-usage:usage-query` 흐름을 제공한다.
+- 로컬 공식 plugin `0.0.1`의 read-only script는 `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`을 사용하고 ZAI platform의 Model usage, Tool usage, Quota limit을 한 번의 script 실행에서 조회한다.
+- QuotaBeacon은 plugin source를 포함하거나 endpoint를 재구현하지 않는다. 사용자가 연결을 켠 경우에만 설치된 cache의 manifest·script와 `claude-glm` alias를 strict 탐지한 뒤 공식 script process를 정확히 1회 실행한다.
+- shell alias는 실행하지 않는다. 한 줄 alias를 tokenization해 `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN` 두 값만 자식 process environment로 전달하고 나머지 environment·flag·command는 무시한다. ZAI HTTPS base URL과 `claude` command가 아니면 거부한다.
+- stdout의 Model/Tool section과 원본 quota response는 저장·export·log하지 않는다. `Platform: ZAI`와 `Quota limit data:` 뒤의 단일 JSON object만 분리하고, `Token usage(5 Hour)`와 `MCP usage(1 Month)` percentage만 정규화한다.
+- 공식 output에는 두 window의 reset 시각이 없으므로 `resetsAt=nil`을 보존한다. 누락 window는 `partial`, 0%는 실제 0%, 범위 밖 값은 malformed로 처리한다.
+- 성공 결과는 5분 재사용하며 process timeout은 25초다. 실행 내부 retry·loop·모델 호출·login/logout·credential write-back은 없다.
+- Coding Plan Usage Policy의 지원 도구 제한과 외부 plugin dependency 때문에 이 경로는 `observed · Beta`다. plugin 미설치·profile 미검출·output drift를 실제 값으로 추정하지 않고 typed state로 표시한다.
 
 ## 공통 typed state
 
@@ -80,5 +83,5 @@
 - Codex: 공식 read-only rate-limit probe 성공, credential hash·mtime 불변.
 - Claude: Keychain credential 존재, OAuth usage HTTP 200, 5시간·7일·Fable field 존재, credential 불변을 확인했다. 설치 앱은 statusLine bridge 없이 3개 window를 `LIVE · keychain · observed`로 표시했다.
 - Grok: 공식 CLI billing backend read-only probe 성공, 필요한 field 존재와 credential SHA-256·mtime·mode 불변 확인. `observed · Beta` LIVE 경로로 사용.
-- Z.ai: 현재 PATH·Claude 설정·plugin 목록에서 로그인 경로를 찾지 못해 상태 전용 유지.
+- Z.ai: `claude-glm` alias의 ZAI profile과 공식 `glm-plan-usage` `0.0.1`을 확인하고 redacted official script probe에 성공했다. 설치 앱은 5시간 token·월간 MCP 두 window를 `LIVE · officialCLI · observed`로 표시했으며 profile hash·mtime은 불변이었다.
 - 상세: [Provider 실환경 검증 보고서](provider-validation-2026-08-16.md)

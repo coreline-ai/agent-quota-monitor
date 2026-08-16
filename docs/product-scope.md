@@ -18,6 +18,7 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Z.ai GLM Coding Plan의 quota와 
 
 - macOS status item과 popover
 - Claude Code, Codex, Grok Build, Z.ai GLM quota 상태
+- Z.ai 공식 Usage Query plugin 기반 5시간 token·월간 MCP quota 연결(Beta)
 - quota window별 사용률, reset, 출처, 최신성
 - 연결 필요, 인증 만료, 지원 불가, stale, 부분 성공 상태
 - 마지막 정상 값 캐시

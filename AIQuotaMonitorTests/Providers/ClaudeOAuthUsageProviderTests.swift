@@ -109,10 +109,10 @@ final class ClaudeOAuthUsageProviderTests: XCTestCase {
     }
 
     private func fixture(_ name: String) throws -> Data {
-        let testsRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        return try Data(contentsOf: testsRoot.appending(path: "Fixtures/Claude/\(name).json"))
+        guard let url = Bundle(for: Self.self).url(forResource: name, withExtension: "json") else {
+            throw ProviderErrorCode.notFound
+        }
+        return try Data(contentsOf: url)
     }
 }
 

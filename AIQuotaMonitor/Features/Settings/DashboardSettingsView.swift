@@ -16,10 +16,9 @@ struct DashboardSettingsView: View {
     @AppStorage(QuotaPreferenceKey.providerVisible(.codex)) private var showCodex = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.grok)) private var showGrok = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.zai)) private var showZAI = true
-    @State private var zaiKey = ""
-    @State private var keyStatus = "저장 안 됨"
     @State private var notificationStatus = "권한 미확인"
     @State private var historyStatus = ""
+    @State private var legacyZAIKeyStatus = ""
     private let keychain = KeychainStore()
 
     var body: some View {
@@ -51,18 +50,23 @@ struct DashboardSettingsView: View {
                 }
 
                 SignalPanel(title: "Provider 연결") {
-                    Label("왼쪽 사이드바의 ‘연결’에서 Codex·Claude·Grok을 관리합니다.", systemImage: "link.badge.plus")
+                    Label("왼쪽 사이드바의 ‘연결’에서 Codex·Claude·Grok·GLM을 관리합니다.", systemImage: "link.badge.plus")
                         .foregroundStyle(.secondary)
                 }
 
-                SignalPanel(title: "Z.ai 수동 키") {
-                    Text("Keychain에만 저장됩니다. Quota 조회 계약이 확정되기 전에는 네트워크 요청에 사용하지 않습니다.")
-                        .font(.caption).foregroundStyle(.secondary)
-                    SecureField("키 입력", text: $zaiKey)
+                SignalPanel(title: "Z.ai 공식 연결") {
+                    Label("수동 키 입력 대신 기존 claude-glm 프로필과 공식 glm-plan-usage 플러그인을 사용합니다.", systemImage: "checkmark.shield")
+                        .foregroundStyle(.secondary)
+                    Text("연결 승인과 탐지 상태는 왼쪽 사이드바의 ‘연결’에서 확인할 수 있습니다.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     HStack {
-                        Button("추가 또는 교체") { replaceKey() }.disabled(zaiKey.isEmpty)
-                        Button("삭제", role: .destructive) { deleteKey() }
-                        Text(keyStatus).font(.caption).foregroundStyle(.secondary)
+                        Button("기존 미사용 수동 키 삭제", role: .destructive) {
+                            Task { await deleteLegacyZAIKey() }
+                        }
+                        if !legacyZAIKeyStatus.isEmpty {
+                            Text(legacyZAIKeyStatus).font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                 }
 
@@ -185,27 +189,13 @@ struct DashboardSettingsView: View {
         .accessibilityIdentifier("settings.appearance.provider.\(provider.rawValue)")
     }
 
-    private func replaceKey() {
-        let data = Data(zaiKey.utf8)
-        zaiKey = ""
-        Task {
-            do {
-                try await keychain.replace(data, account: "zai.manual")
-                keyStatus = "Keychain 저장됨"
-            } catch {
-                keyStatus = "저장 실패"
-            }
+    private func deleteLegacyZAIKey() async {
+        do {
+            try await keychain.delete(account: "zai.manual")
+            legacyZAIKeyStatus = "삭제됨"
+        } catch {
+            legacyZAIKeyStatus = "삭제 실패"
         }
     }
 
-    private func deleteKey() {
-        Task {
-            do {
-                try await keychain.delete(account: "zai.manual")
-                keyStatus = "삭제됨"
-            } catch {
-                keyStatus = "삭제 실패"
-            }
-        }
-    }
 }

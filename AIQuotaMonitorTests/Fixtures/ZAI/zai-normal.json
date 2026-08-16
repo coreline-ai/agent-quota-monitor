@@ -1,8 +1,6 @@
 {
   "limits": [
-    { "type": "session", "used_percentage": 28, "resets_at": 1786878000 },
-    { "type": "weekly", "used_percentage": 63, "resets_at": 1787356800 },
-    { "type": "future_window", "used_percentage": 9 }
-  ],
-  "credits": { "balance": "8.50" }
+    { "type": "MCP usage(1 Month)", "percentage": 42, "currentUsage": 21, "totol": 50 },
+    { "type": "Token usage(5 Hour)", "percentage": 28 }
+  ]
 }

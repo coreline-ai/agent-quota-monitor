@@ -54,7 +54,7 @@ flowchart LR
 - cancellation/timeout HTTP·Process 경계와 read-only credential validator/Keychain
 - versioned JSON history, 90일·25 MiB retention, Provider별 single-flight refresh
 - Claude Keychain OAuth usage GET adapter와 선택적 statusLine snapshot parser, Codex 공식 app-server read-only adapter
-- Grok 공식 CLI billing backend 기반 `observed · Beta` adapter, Z.ai status-only adapter와 네 Provider 독립 synthetic parser fixture
+- Grok 공식 CLI billing backend와 Z.ai 공식 `glm-plan-usage` plugin 기반 `observed · Beta` adapter, 네 Provider 독립 synthetic parser fixture
 - quota chart와 local token/cost chart를 분리한 5-section Signal Ledger dashboard
 - `TrendPresentation`의 기간 filter·Provider/window/reset grouping·freshness segment·bucket downsample과 Swift Charts `Reset Bands` 선 그래프
 - 공통 `QuotaPresentation`·`BeaconComponents`를 사용하는 Beacon Ledger popover와 한도 원장
@@ -132,6 +132,16 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 3. `ClaudeOAuthUsageProvider`가 Anthropic OAuth usage allowlist URL에 GET을 보내고 redirect·cookie·cache를 거부한다. refresh token·모델 endpoint·login/logout은 사용하지 않는다.
 4. `ClaudeOAuthUsageParser`가 5시간·7일·Fable 주간 window만 공통 domain으로 정규화한다. 원본 payload와 credential은 저장하지 않는다.
 5. 성공 결과는 180초 재사용하고 429에서는 backoff한다. 이 계약은 `observed · Beta`이며 기존 statusLine은 수정하지 않는다.
+
+## Z.ai GLM official plugin 흐름
+
+1. 사용자가 연결 화면에서 GLM Beta toggle을 켜고 **읽기 전용 연결 적용**을 누른다.
+2. `ZAIClaudeProfileReader`가 `~/.zshrc`를 실행하지 않고 한 줄 `claude-glm` alias를 tokenization해 ZAI base URL과 auth token만 메모리로 선택한다.
+3. `ZAIPluginLocator`가 Claude user cache의 `zai-coding-plugins/glm-plan-usage/<version>`에서 manifest name/version, regular script, 직접 Node 실행 파일을 확인한다.
+4. `ZAIPluginUsageExecutor`가 최소 environment로 공식 `query-usage.mjs`를 정확히 1회 실행하며 timeout은 25초다.
+5. `ZAIPluginOutputExtractor`는 Model/Tool section을 폐기하고 ZAI Quota limit JSON만 `ZAIQuotaParser`에 전달한다.
+6. parser는 5시간 token과 월간 MCP percentage를 `officialCLI · observed · live` window로 정규화한다. reset은 공식 output에 없으므로 만들지 않는다.
+7. 성공 결과는 5분 재사용하고 credential/profile/plugin을 수정하지 않는다. profile/plugin/output drift는 typed failure이며 이 연결은 Beta다.
 
 ## 배포 경계
 

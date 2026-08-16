@@ -27,7 +27,7 @@ final class ProviderParserTests: XCTestCase {
         XCTAssertNil(partial.windows.first?.resetsAt)
     }
 
-    func testGrokObservedParserAndExperimentalZAIParser() throws {
+    func testGrokAndZAIOfficialObservedParsers() throws {
         let grok = try GrokQuotaParser().parse(fixture("Grok", "normal"), observedAt: observedAt)
         XCTAssertEqual(grok.state, .available)
         XCTAssertEqual(grok.windows.first?.kind, .sharedWeekly)
@@ -40,8 +40,17 @@ final class ProviderParserTests: XCTestCase {
         XCTAssertNil(grokPartial.windows.first?.resetsAt)
 
         let zai = try ZAIQuotaParser().parse(fixture("ZAI", "normal"), observedAt: observedAt)
-        XCTAssertEqual(zai.state, .unsupportedContract)
-        XCTAssertTrue(zai.windows.contains { $0.kind == .custom("future_window") })
+        XCTAssertEqual(zai.state, .available)
+        XCTAssertEqual(zai.windows.count, 2)
+        XCTAssertEqual(zai.windows.first { $0.kind == .fiveHour }?.usedRatio.value ?? -1, 0.28, accuracy: 0.0001)
+        XCTAssertEqual(zai.windows.first { $0.kind == .custom("MCP 월간") }?.usedRatio.value ?? -1, 0.42, accuracy: 0.0001)
+        XCTAssertTrue(zai.windows.allSatisfy { $0.resetsAt == nil })
+        XCTAssertTrue(zai.windows.allSatisfy { $0.provenance.source == .officialCLI })
+        XCTAssertTrue(zai.windows.allSatisfy { $0.provenance.contract == .observed })
+
+        let zaiPartial = try ZAIQuotaParser().parse(fixture("ZAI", "partial"), observedAt: observedAt)
+        XCTAssertEqual(zaiPartial.state, .partial)
+        XCTAssertEqual(zaiPartial.windows.first?.usedRatio.value, 0)
     }
 
     func testGrokLegacyBillingFallbackAndInvalidPercent() throws {
@@ -140,10 +149,10 @@ final class ProviderParserTests: XCTestCase {
     }
 
     private func fixture(_ provider: String, _ name: String) throws -> Data {
-        let testsRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let url = testsRoot.appending(path: "Fixtures/\(provider)/\(provider.lowercased())-\(name).json")
+        let resource = "\(provider.lowercased())-\(name)"
+        guard let url = Bundle(for: Self.self).url(forResource: resource, withExtension: "json") else {
+            throw ProviderErrorCode.notFound
+        }
         return try Data(contentsOf: url)
     }
 }

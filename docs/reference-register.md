@@ -13,7 +13,8 @@
 | 참조 | 분류 | 허용 목적 | 구현에 재사용 금지 | 상태 |
 |---|---|---|---|---|
 | Claude Code statusline 문서 | 공식 문서 | rate limit field·null 조건·reset 의미 확인 | 문서 예제 script의 제품 코드 복사 | 사용 가능 |
-| Z.ai Usage Query Plugin 문서 | 공식 문서 | GLM quota 기능과 사용자 흐름 확인 | plugin source·payload fixture 복사 | 사용 가능 |
+| [Z.ai Usage Query Plugin 문서](https://docs.z.ai/devpack/extension/usage-query-plugin) | 공식 문서 | GLM quota 기능, marketplace 설치, 사용자 흐름 확인 | plugin source·payload fixture 복사 | 사용 가능 |
+| [zai-org/zai-coding-plugins](https://github.com/zai-org/zai-coding-plugins) | 공식 plugin source | version `0.0.1` script 입력·출력 marker·single-run 제약 관찰 | source·script·fixture를 제품에 복사 | 임시 분석 및 설치된 공식 plugin 실행만 |
 | Claude Code statusline schema | 공식 문서 | `five_hour`, `seven_day`, null/reset 의미 확인 | 예제 payload·script 복사 | 사용 가능 |
 | 설치된 Orca `app.asar` Claude rate-limit service | 설치 앱 동작 비교 | Keychain OAuth primary → CLI fallback → statusLine live 보강 순서, exact GET/header, Fable scoped mapping 확인 | source·test·fixture·UI·asset 복사 | 계약 관찰만 |
 | [claudexor integrations](https://github.com/razzant/claudexor/blob/main/docs/INTEGRATIONS.md) | 참고 오픈소스 문서 | macOS Keychain 자동 탐색과 OAuth usage primary/statusLine secondary 동작 교차 확인 | source·credential adapter·fixture 복사 | 참고만 |
@@ -64,5 +65,5 @@ ID:
 | REF-P2-CLAUDE-OAUTH | 2026-08-16 | 설치된 Orca bundle + 승인된 redacted 실계정 probe | `Claude Code-credentials` access token, OAuth usage GET, 5시간/7일/Fable scoped, 180초 cache·429 backoff 필요 | 독립 Swift Keychain reader/GET adapter/parser + synthetic fixture | 사용 안 함 |
 | REF-P2-CODEX | 2026-08-16 | 로컬 `codex app-server generate-json-schema` | `account/rateLimits/read`, primary/secondary/credits | `Providers/Codex/**` | 사용 안 함 |
 | REF-P2-GROK | 2026-08-16 | https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/src/extensions/billing.rs | first-party billing GET, 사용률·기간·reset·선불 잔액 | 독립 Swift adapter + synthetic parser | 사용 안 함 |
-| REF-P2-ZAI | 2026-08-16 | https://docs.z.ai/devpack/overview | 5시간/주간 Coding Plan quota와 지원 도구 제한 | 상태 전용 + synthetic parser | 사용 안 함 |
+| REF-P2-ZAI | 2026-08-16 | https://docs.z.ai/devpack/extension/usage-query-plugin + https://github.com/zai-org/zai-coding-plugins | `claude-glm` 환경을 받는 official script `0.0.1`, `Platform: ZAI`, Quota limit의 5시간 token·월간 MCP percentage | 독립 Swift profile reader/locator/output extractor/parser/provider + synthetic fixture | 사용 안 함; 설치된 official script를 외부 process로만 실행 |
 | REF-P4-PRICE | 2026-08-16 | Provider별 공식 model pricing | 날짜·출처·alias 기반 API 정가 | `Resources/PricingCatalog.json` | 사용 안 함 |

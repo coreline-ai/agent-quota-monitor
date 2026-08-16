@@ -9,3 +9,8 @@ original brand-asset generator and are not bundled in the application.
 External products listed in `docs/reference-register.md` were research and
 comparison references only. Their code, fixtures, assets, and build scripts are
 not included in QuotaBeacon.
+
+The optional Z.ai GLM integration executes the separately installed official
+`glm-plan-usage` Claude Code plugin (Apache-2.0) from the user's Claude plugin
+cache. The plugin is not copied into, linked with, or distributed inside
+QuotaBeacon.

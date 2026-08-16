@@ -7,7 +7,6 @@ struct ProviderConnectionsView: View {
     @State private var codexEnabled = false
     @State private var codexPath = ""
     @State private var claudeEnabled = false
-    @State private var claudePath = ""
     @State private var grokEnabled = false
     @State private var grokAuthPath = ""
     @State private var didLoad = false
@@ -21,7 +20,7 @@ struct ProviderConnectionsView: View {
                     Text("Provider 연결")
                         .font(.largeTitle.bold())
                         .accessibilityIdentifier("dashboard.connections.title")
-                    Text("토글만으로는 연결되지 않습니다. 경로를 확인하고 아래 적용 버튼을 눌러야 읽기 전용 수집이 시작됩니다.")
+                    Text("Provider별 로그인·실행 파일을 확인하고 아래 적용 버튼을 누르면 읽기 전용 수집이 시작됩니다.")
                         .foregroundStyle(.secondary)
                 }
 
@@ -45,16 +44,15 @@ struct ProviderConnectionsView: View {
                 }
 
                 SignalPanel(title: "Claude Code") {
-                    Toggle("0600 status snapshot 읽기", isOn: $claudeEnabled)
+                    Toggle("로그인된 Claude quota 자동 읽기", isOn: $claudeEnabled)
                         .accessibilityIdentifier("connections.claude.toggle")
-                    TextField("snapshot 파일 절대 경로", text: $claudePath)
-                        .disabled(!claudeEnabled)
-                        .accessibilityIdentifier("connections.claude.path")
                     connectionEvidence(
-                        secureFileExists(claudePath) ? "읽기 전용 snapshot을 확인했습니다." : "Claude snapshot bridge와 0600 파일이 필요합니다.",
-                        available: secureFileExists(claudePath)
+                        claudeEnabled
+                            ? "Claude Code macOS Keychain 로그인을 자동 탐색합니다."
+                            : "연결을 켜면 기존 Claude Code 로그인을 사용합니다.",
+                        available: claudeEnabled
                     )
-                    Text("Claude 설정은 자동으로 변경하지 않습니다.")
+                    Text("별도 경로·statusLine 설정 없이 access token을 메모리에서만 읽어 Anthropic usage GET에 사용합니다. refresh token·모델 호출·credential 변경은 하지 않습니다.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -120,8 +118,9 @@ struct ProviderConnectionsView: View {
         codexEnabled = defaults.bool(forKey: "codex.readOnlyEnabled")
         codexPath = defaults.string(forKey: "codex.executablePath")
             ?? ProviderConnectionDefaults.codexExecutablePath()
-        claudeEnabled = defaults.bool(forKey: "claude.snapshotEnabled")
-        claudePath = defaults.string(forKey: "claude.snapshotPath") ?? ""
+        claudeEnabled = defaults.object(forKey: "claude.readOnlyEnabled") != nil
+            ? defaults.bool(forKey: "claude.readOnlyEnabled")
+            : defaults.bool(forKey: "claude.snapshotEnabled")
         grokEnabled = defaults.bool(forKey: "grok.readOnlyEnabled")
         grokAuthPath = defaults.string(forKey: "grok.authPath")
             ?? ProviderConnectionDefaults.grokAuthPath
@@ -132,17 +131,14 @@ struct ProviderConnectionsView: View {
         applyStatus = ""
 
         let normalizedCodexPath = expanded(codexPath)
-        let normalizedClaudePath = expanded(claudePath)
         let normalizedGrokPath = expanded(grokAuthPath)
         codexPath = normalizedCodexPath
-        claudePath = normalizedClaudePath
         grokAuthPath = normalizedGrokPath
 
         let defaults = UserDefaults.standard
         defaults.set(codexEnabled, forKey: "codex.readOnlyEnabled")
         defaults.set(normalizedCodexPath, forKey: "codex.executablePath")
-        defaults.set(claudeEnabled, forKey: "claude.snapshotEnabled")
-        defaults.set(normalizedClaudePath, forKey: "claude.snapshotPath")
+        defaults.set(claudeEnabled, forKey: "claude.readOnlyEnabled")
         defaults.set(grokEnabled, forKey: "grok.readOnlyEnabled")
         defaults.set(normalizedGrokPath, forKey: "grok.authPath")
 
@@ -150,7 +146,6 @@ struct ProviderConnectionsView: View {
             codexEnabled: codexEnabled,
             codexExecutablePath: normalizedCodexPath,
             claudeEnabled: claudeEnabled,
-            claudeSnapshotPath: normalizedClaudePath,
             grokEnabled: grokEnabled,
             grokAuthPath: normalizedGrokPath
         )

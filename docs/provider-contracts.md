@@ -2,7 +2,7 @@
 
 확인일: `2026-08-16 KST`
 
-이 문서는 공식 문서와 로컬에 설치된 공식 CLI가 공개한 schema만 기록한다. 외부 프로젝트 source·fixture는 사용하지 않았다.
+이 문서는 공식 문서, 로컬에 설치된 공식 client가 관측한 계약, 승인된 redacted 실계정 probe만 기록한다. 외부 프로젝트 source·fixture는 제품에 사용하지 않았다.
 
 ## 계약 등급
 
@@ -16,19 +16,22 @@
 
 | Provider | 계약 | 입력 | 확인된 값 | 출시 상태 |
 |---|---|---|---|---|
-| Claude | `documented` | Claude Code status-line JSON | 5시간·7일 사용률, reset; 각 window 독립 누락 가능 | 로그인 확인, snapshot bridge 전 |
+| Claude | `observed` | Claude Code macOS Keychain + Anthropic OAuth usage GET | 5시간·7일·Fable 주간 사용률과 reset; 각 window 독립 누락 가능 | 실계정 read-only probe 및 설치 앱 LIVE PASS, Beta |
 | Codex | `observed` | 공식 `codex app-server` JSON-RPC | primary·secondary, reset, duration, plan, credits | 실계정 read-only probe PASS, `codex-cli 0.145.0` |
 | Grok | `observed` | xAI 공식 Grok Build CLI billing backend | 공용 사용률, weekly/monthly 기간, reset, 선불 잔액 | 실계정 read-only probe PASS, Beta |
 | Z.ai | `documented` UX / `experimental` machine contract | 공식 usage-query plugin | 5시간·weekly quota 존재 | 상태 전용 |
 
 ## Claude
 
-- 공식 계약: `rate_limits.five_hour.used_percentage`, `rate_limits.seven_day.used_percentage`는 `0...100`이다.
-- reset은 Unix epoch seconds다.
-- `rate_limits`와 각 window는 첫 API 응답 전 또는 계정 유형에 따라 없을 수 있다.
-- status-line은 로컬 script로 JSON을 전달하며 자체로 모델 token을 소비하지 않는다.
-- 제품은 Claude 설정을 자동 수정하지 않는다. 사용자가 명시적으로 bridge를 설치한 경우에만 snapshot을 읽는다.
-- timeout: 파일 읽기 2초. 최소 client version은 직접 fixture 확보 전 미확정이다.
+- 설치된 Claude monitor 참조 구현과 승인된 실계정 probe에서 `Claude Code-credentials` Keychain JSON의 `claudeAiOauth.accessToken`을 primary credential로 확인했다.
+- adapter는 `GET https://api.anthropic.com/api/oauth/usage`만 호출한다. request에는 bearer access token, `anthropic-beta: oauth-2025-04-20`, `User-Agent: claude-code/2.1.0`만 필요한 인증/호환 header로 사용하고 body·cookie는 보내지 않는다.
+- 응답의 `five_hour`, `seven_day`에서 `utilization` 또는 `used_percentage`를 `0...100`으로 읽는다. reset은 ISO-8601, epoch seconds, epoch milliseconds를 허용한다.
+- `limits[]`의 `kind=weekly_scoped`, `scope.model.display_name=Fable` 항목은 별도 Fable 주간 window로 정규화한다. 기존 `fable_weekly` 계열 field는 schema drift fallback이다.
+- 5시간 또는 7일 window 하나만 존재하면 `partial`로 보존하고 누락 값을 0%로 만들지 않는다.
+- 성공 응답은 actor 내부에서 최소 180초 재사용한다. `429`는 `Retry-After` 숫자 또는 기본 15분 backoff를 적용해 usage endpoint 과호출을 방지한다.
+- URLSession은 ephemeral이며 redirect·cookie·response cache를 거부한다. timeout은 10초다.
+- access token은 메모리에서만 사용한다. refresh token을 parse·사용·전송하거나 Keychain을 갱신하지 않으며 Claude 설정/statusLine도 수정하지 않는다.
+- endpoint는 공개 stable API 문서가 아니라 first-party client 동작과 실계정 응답에서 관측한 계약이므로 `observed · Beta`다. 공식 statusLine `rate_limits`는 독립 fallback 계약으로만 유지한다.
 
 ## Codex
 
@@ -75,7 +78,7 @@
 `2026-08-16` 승인 검증 결과:
 
 - Codex: 공식 read-only rate-limit probe 성공, credential hash·mtime 불변.
-- Claude: host 로그인 확인. QuotaBeacon용 snapshot은 비활성이라 quota fixture는 미수집.
+- Claude: Keychain credential 존재, OAuth usage HTTP 200, 5시간·7일·Fable field 존재, credential 불변을 확인했다. 설치 앱은 statusLine bridge 없이 3개 window를 `LIVE · keychain · observed`로 표시했다.
 - Grok: 공식 CLI billing backend read-only probe 성공, 필요한 field 존재와 credential SHA-256·mtime·mode 불변 확인. `observed · Beta` LIVE 경로로 사용.
 - Z.ai: 현재 PATH·Claude 설정·plugin 목록에서 로그인 경로를 찾지 못해 상태 전용 유지.
 - 상세: [Provider 실환경 검증 보고서](provider-validation-2026-08-16.md)

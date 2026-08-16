@@ -11,6 +11,7 @@ Phase 1 도구:
 
 - `ProviderProbe/safe_validation.py`: Provider 설치·credential metadata·capability를 redacted 형태로 검사한다.
 - `ProviderProbe/codex_rate_limits_probe.py`: Codex 공식 read-only rate-limit 계약을 검증한다.
+- `ProviderProbe/claude_oauth_usage_probe.py`: macOS Keychain의 기존 Claude Code access token으로 Anthropic usage endpoint를 GET-only 검증하고 credential 불변 여부·field 존재만 출력한다.
 - `ProviderProbe/grok_billing_probe.py`: Grok 공식 CLI billing backend를 GET-only로 검증한다.
 - `security_audit.py`, `audit_originality.sh`, `audit_greenfield_references.sh`: 비밀정보·독창성·참조 경계를 검사한다.
 - `build_release.sh`, `package_release.sh`: Universal Release와 배포 산출물을 만든다.

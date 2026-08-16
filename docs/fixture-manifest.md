@@ -6,7 +6,7 @@
 
 | Provider | 파일 | 종류 | 계약 근거 | redaction | 실제 검증 |
 |---|---|---|---|---|---|
-| Claude | `claude-{normal,partial,errors,malformed}.json` | synthetic | 공식 status-line field | 개인 field 미포함 | 미실행 |
+| Claude | `claude-{normal,partial,errors,malformed}.json`, `claude-oauth-{normal,partial}.json` | synthetic | 공식 statusLine + 관측된 OAuth usage field | token·계정·실제 quota 미포함 | OAuth field 존재 실계정 검증 |
 | Codex | `codex-{normal,partial,errors,malformed}.json` | synthetic | `codex-cli 0.145.0` 생성 schema | ID·workspace·account 미포함 | 미실행 |
 | Grok | `grok-{normal,partial,errors,malformed}.json` | synthetic | xAI 공식 Grok Build billing response field | token·user ID·실제 quota 미포함 | field 존재 실계정 검증 |
 | ZAI | `zai-{normal,partial,errors,malformed}.json` | synthetic | 공식 usage-query UX | key·account 미포함 | machine contract 미확정 |
@@ -20,6 +20,8 @@
 ee3bb016ee1b1e395152b5db18af8d7e785aa19a2ab541c9bd9d13dfa8a2a0f0  Claude/claude-malformed.json
 6dab46e166c00dc822cee35942c60722417237e370809f2569bd38e3328bdd23  Claude/claude-normal.json
 be33fe136a9d446471f73f372d18e791bcb9f1ec5293db61bc069dee583da397  Claude/claude-partial.json
+ba973a6768bb7aaea40076f03d100cf9ac8132d91a887983235315051f1ca400  Claude/claude-oauth-normal.json
+e33807fe38d8330e55f529863e1a6b9102fba931f2e2a23e41ce845fa13c8fc8  Claude/claude-oauth-partial.json
 0b4d6016625e6313fabba827333ea820eb5a5508db95061dcf2a9622a4a30992  Codex/codex-errors.json
 51da86c570330d901fbc1aa167c4c41bc17049bbac37ee1e4758769c930aab4f  Codex/codex-malformed.json
 8e6a20103356d06d08edf396f76cbcf2b87dd9b35e3964659ef08efd71c56aa9  Codex/codex-normal.json

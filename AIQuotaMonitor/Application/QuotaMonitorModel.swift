@@ -82,7 +82,6 @@ final class QuotaMonitorModel: ObservableObject {
         codexEnabled: Bool,
         codexExecutablePath: String,
         claudeEnabled: Bool,
-        claudeSnapshotPath: String,
         grokEnabled: Bool,
         grokAuthPath: String
     ) async {
@@ -91,7 +90,6 @@ final class QuotaMonitorModel: ObservableObject {
             codexEnabled: codexEnabled,
             codexExecutablePath: codexExecutablePath,
             claudeEnabled: claudeEnabled,
-            claudeSnapshotPath: claudeSnapshotPath,
             grokEnabled: grokEnabled,
             grokAuthPath: grokAuthPath
         )
@@ -163,11 +161,13 @@ final class QuotaMonitorModel: ObservableObject {
     }
 
     private static func configuredProviders(defaults: UserDefaults) -> [any QuotaProvider] {
-        providers(
+        let claudeEnabled = defaults.object(forKey: "claude.readOnlyEnabled") != nil
+            ? defaults.bool(forKey: "claude.readOnlyEnabled")
+            : defaults.bool(forKey: "claude.snapshotEnabled")
+        return providers(
             codexEnabled: defaults.bool(forKey: "codex.readOnlyEnabled"),
             codexExecutablePath: defaults.string(forKey: "codex.executablePath") ?? "/opt/homebrew/bin/codex",
-            claudeEnabled: defaults.bool(forKey: "claude.snapshotEnabled"),
-            claudeSnapshotPath: defaults.string(forKey: "claude.snapshotPath") ?? "",
+            claudeEnabled: claudeEnabled,
             grokEnabled: defaults.bool(forKey: "grok.readOnlyEnabled"),
             grokAuthPath: defaults.string(forKey: "grok.authPath")
                 ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: ".grok/auth.json").path
@@ -186,17 +186,12 @@ final class QuotaMonitorModel: ObservableObject {
         codexEnabled: Bool,
         codexExecutablePath: String,
         claudeEnabled: Bool,
-        claudeSnapshotPath: String,
         grokEnabled: Bool,
         grokAuthPath: String
     ) -> [any QuotaProvider] {
         let claude: any QuotaProvider
-        if claudeEnabled, !claudeSnapshotPath.isEmpty {
-            let url = URL(fileURLWithPath: claudeSnapshotPath).standardizedFileURL
-            claude = ClaudeStatusSnapshotProvider(
-                snapshotURL: url,
-                validator: CredentialFileValidator(allowedRoots: [url.deletingLastPathComponent()])
-            )
+        if claudeEnabled {
+            claude = ClaudeOAuthUsageProvider()
         } else {
             claude = StateOnlyProvider(id: .claude, state: .notConfigured)
         }

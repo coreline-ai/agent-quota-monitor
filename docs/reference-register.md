@@ -15,6 +15,10 @@
 | Claude Code statusline 문서 | 공식 문서 | rate limit field·null 조건·reset 의미 확인 | 문서 예제 script의 제품 코드 복사 | 사용 가능 |
 | Z.ai Usage Query Plugin 문서 | 공식 문서 | GLM quota 기능과 사용자 흐름 확인 | plugin source·payload fixture 복사 | 사용 가능 |
 | Claude Code statusline schema | 공식 문서 | `five_hour`, `seven_day`, null/reset 의미 확인 | 예제 payload·script 복사 | 사용 가능 |
+| 설치된 Orca `app.asar` Claude rate-limit service | 설치 앱 동작 비교 | Keychain OAuth primary → CLI fallback → statusLine live 보강 순서, exact GET/header, Fable scoped mapping 확인 | source·test·fixture·UI·asset 복사 | 계약 관찰만 |
+| [claudexor integrations](https://github.com/razzant/claudexor/blob/main/docs/INTEGRATIONS.md) | 참고 오픈소스 문서 | macOS Keychain 자동 탐색과 OAuth usage primary/statusLine secondary 동작 교차 확인 | source·credential adapter·fixture 복사 | 참고만 |
+| [CodexBar Claude provider notes](https://github.com/steipete/CodexBar/blob/main/docs/claude.md) | 참고 오픈소스 문서 | OAuth usage 우선과 CLI fallback 동작 교차 확인 | source·parser·test·fixture 복사 | 참고만 |
+| [Claude Code Usage Monitor issue #202](https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/issues/202) | 공개 구현 이슈 | exact OAuth beta/User-Agent header와 429 polling 위험 교차 확인 | issue code snippet·source 복사 | 참고만 |
 | 로컬 Codex `0.145.0` app-server 생성 schema | 공식 client schema | `account/rateLimits/read`, primary/secondary/credits 확인 | 계정 응답·credential 저장 | 사용 가능 |
 | xAI Grok FAQ·Models | 공식 문서 | weekly usage UX와 Grok Build 가격 근거 확인 | cookie·model endpoint 수집 | 사용 가능 |
 | xAI Grok Build billing extension | 공식 client source | first-party billing URL·header·response field 확인 | source code·fixture 복사, billing 외 endpoint 호출 | 계약 관찰만 |
@@ -57,6 +61,7 @@ ID:
 | ID | 확인 날짜 | 공식 계약 | 확인한 동작 | 신규 구현 | 외부 source |
 |---|---|---|---|---|---|
 | REF-P2-CLAUDE | 2026-08-16 | https://code.claude.com/docs/en/statusline | 5시간/7일 사용률, epoch reset, window별 누락 | `Providers/Claude/**` | 사용 안 함 |
+| REF-P2-CLAUDE-OAUTH | 2026-08-16 | 설치된 Orca bundle + 승인된 redacted 실계정 probe | `Claude Code-credentials` access token, OAuth usage GET, 5시간/7일/Fable scoped, 180초 cache·429 backoff 필요 | 독립 Swift Keychain reader/GET adapter/parser + synthetic fixture | 사용 안 함 |
 | REF-P2-CODEX | 2026-08-16 | 로컬 `codex app-server generate-json-schema` | `account/rateLimits/read`, primary/secondary/credits | `Providers/Codex/**` | 사용 안 함 |
 | REF-P2-GROK | 2026-08-16 | https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/src/extensions/billing.rs | first-party billing GET, 사용률·기간·reset·선불 잔액 | 독립 Swift adapter + synthetic parser | 사용 안 함 |
 | REF-P2-ZAI | 2026-08-16 | https://docs.z.ai/devpack/overview | 5시간/주간 Coding Plan quota와 지원 도구 제한 | 상태 전용 + synthetic parser | 사용 안 함 |

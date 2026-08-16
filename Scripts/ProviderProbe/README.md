@@ -5,6 +5,7 @@
 - `fixture_guard.py scan`: fixture secret/PII와 JSON 상태 검사
 - `fixture_guard.py manifest`: SHA-256 manifest 출력
 - `codex_rate_limits_probe.py`: 승인 후 공식 app-server의 `account/rateLimits/read`만 호출
+- `claude_oauth_usage_probe.py`: 승인 후 기존 Claude Code Keychain access token으로 Anthropic usage GET만 호출하고 field 존재·credential 불변만 출력
 - `grok_billing_probe.py`: 승인 후 xAI 공식 CLI billing backend GET만 호출하고 field 존재·credential 불변만 출력
 - `safe_validation.py inspect`: CLI·로그인 증거·설정 capability를 secret 비노출 형태로 검사
 - `safe_validation.py baseline/compare`: allowlist credential/config의 hash·mtime·mode를 검증 전후 비교
@@ -19,10 +20,12 @@ Grok probe는 정확한 first-party CLI billing URL에 GET 한 번만 보낸다.
 
 ```zsh
 python3 Scripts/ProviderProbe/test_safe_validation.py
+python3 Scripts/ProviderProbe/test_claude_oauth_usage_probe.py
 python3 Scripts/ProviderProbe/test_grok_billing_probe.py
 python3 Scripts/ProviderProbe/safe_validation.py baseline --output /tmp/quotabeacon-provider-baseline.json
 python3 Scripts/ProviderProbe/safe_validation.py inspect --output /tmp/quotabeacon-provider-inspect.json
 python3 Scripts/ProviderProbe/codex_rate_limits_probe.py
+python3 Scripts/ProviderProbe/claude_oauth_usage_probe.py
 python3 Scripts/ProviderProbe/grok_billing_probe.py
 python3 Scripts/ProviderProbe/safe_validation.py compare \
   --baseline /tmp/quotabeacon-provider-baseline.json \
@@ -32,4 +35,5 @@ python3 Scripts/ProviderProbe/safe_validation.py compare \
 - `/tmp` evidence 파일은 `0600`으로 생성한다.
 - `inspect`의 stdout에서는 credential hash·mtime을 제거한다.
 - Claude 설정은 status-line/GLM endpoint/plugin 여부만 파생하며 command·key 값을 출력하지 않는다.
+- Claude OAuth usage probe는 승인 후 Keychain access token을 메모리에서만 읽어 Anthropic usage GET을 1회 호출하고 field 존재·credential 불변 여부만 출력한다.
 - Grok은 공식 client source에서 관찰된 billing 계약만 Beta로 검증한다. GLM은 공개된 독립 앱용 quota contract가 없으면 수치를 생성하지 않는다.

@@ -54,7 +54,7 @@ struct DataSourcesView: View {
 
     private func contract(for provider: ProviderID) -> SourceContractKind {
         switch provider {
-        case .claude: .documented
+        case .claude: .observed
         case .codex, .grok: .observed
         case .zai: .experimental
         }
@@ -62,7 +62,7 @@ struct DataSourcesView: View {
 
     private func authentication(for provider: ProviderID) -> String {
         switch provider {
-        case .claude: "사용자 승인 read-only snapshot"
+        case .claude: "Claude Code Keychain · read-only OAuth usage"
         case .codex: "공식 CLI 계정 상태 · read-only"
         case .grok: "grok login credential · read-only CLI billing"
         case .zai: "수동 Keychain · endpoint 미호출"

@@ -361,38 +361,28 @@ def export_preferences(bundle_id: str = DEFAULT_BUNDLE_ID) -> dict[str, Any] | N
     return value if isinstance(value, dict) else None
 
 
-def claude_snapshot_summary(bundle_id: str = DEFAULT_BUNDLE_ID) -> dict[str, Any]:
+def claude_connection_summary(bundle_id: str = DEFAULT_BUNDLE_ID) -> dict[str, Any]:
     preferences = export_preferences(bundle_id)
     if preferences is None:
-        return {"preferencesPresent": False, "configured": False}
-    enabled = preferences.get("claude.snapshotEnabled") is True
-    raw_path = preferences.get("claude.snapshotPath")
-    configured = enabled and isinstance(raw_path, str) and bool(raw_path.strip())
-    summary: dict[str, Any] = {
+        return {
+            "preferencesPresent": False,
+            "enabled": False,
+            "contract": "keychain_oauth_usage_observed",
+        }
+    direct_preference_present = "claude.readOnlyEnabled" in preferences
+    enabled = (
+        preferences.get("claude.readOnlyEnabled") is True
+        if direct_preference_present
+        else preferences.get("claude.snapshotEnabled") is True
+    )
+    return {
         "preferencesPresent": True,
         "enabled": enabled,
-        "configured": configured,
+        "contract": "keychain_oauth_usage_observed",
+        "automaticCredentialDiscovery": True,
+        "separatePathRequired": False,
+        "legacyPreferenceMigrated": not direct_preference_present and "claude.snapshotEnabled" in preferences,
     }
-    if not configured:
-        return summary
-
-    path = Path(raw_path).expanduser()
-    evidence = fingerprint(FileTarget("claude_snapshot", path))
-    summary["fileState"] = evidence.get("state")
-    summary["mode"] = evidence.get("mode")
-    summary["permissionCompliant"] = evidence.get("permissionCompliant")
-    if evidence.get("state") == "regular" and evidence.get("permissionCompliant"):
-        payload = load_json_object(path)
-        rate_limits = payload.get("rate_limits") if payload else None
-        summary["rateLimitsPresent"] = isinstance(rate_limits, dict)
-        summary["windowsPresent"] = sorted(
-            name for name in ("five_hour", "seven_day")
-            if isinstance(rate_limits, dict) and isinstance(rate_limits.get(name), dict)
-        )
-        mtime_ns = evidence.get("mtimeNs")
-        if isinstance(mtime_ns, int):
-            summary["ageSeconds"] = max(0, int(time.time() - (mtime_ns / 1_000_000_000)))
-    return summary
 
 
 def public_report(*, include_fingerprints: bool = True) -> dict[str, Any]:
@@ -407,7 +397,7 @@ def public_report(*, include_fingerprints: bool = True) -> dict[str, Any]:
             "auth": claude_auth_summary(claude_path),
             "settings": claude_settings_summary(),
             "plugins": claude_plugin_summary(claude_path),
-            "snapshot": claude_snapshot_summary(),
+            "connection": claude_connection_summary(),
         },
         "grok": {
             **grok_capability_summary(grok_path),

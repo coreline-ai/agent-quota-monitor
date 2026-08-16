@@ -177,6 +177,21 @@ class SafeValidationTests(unittest.TestCase):
             mode = stat.S_IMODE(path.stat().st_mode)
         self.assertEqual(mode, 0o600)
 
+    @mock.patch("safe_validation.export_preferences")
+    def test_claude_connection_reports_direct_keychain_contract(self, export_preferences: mock.Mock) -> None:
+        export_preferences.return_value = {
+            "claude.readOnlyEnabled": True,
+            "claude.snapshotEnabled": True,
+            "claude.snapshotPath": "/private/path-that-must-not-leak",
+        }
+        result = subject.claude_connection_summary()
+        encoded = json.dumps(result)
+        self.assertTrue(result["enabled"])
+        self.assertTrue(result["automaticCredentialDiscovery"])
+        self.assertFalse(result["separatePathRequired"])
+        self.assertFalse(result["legacyPreferenceMigrated"])
+        self.assertNotIn("private/path", encoded)
+
 
 if __name__ == "__main__":
     unittest.main()

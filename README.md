@@ -44,8 +44,9 @@ Scripts/package_release.sh
 1. 앱은 기본적으로 모든 credential 기반 Provider 연결을 끈 상태로 시작합니다.
 2. 상세 창의 **왼쪽 사이드바 → 연결** 또는 사이드바 하단의 **Provider 연결** 버튼에서 경로를 확인한 뒤 **읽기 전용 연결 적용**을 눌러 명시적으로 활성화합니다.
 3. Codex 실행 파일은 일반 설치 경로와 `~/.nvm/versions/node/*/bin/codex`에서 자동 탐색합니다.
-4. 로그인, OAuth refresh, browser cookie import, 모델 호출, credit 소비, credential write-back은 하지 않습니다. Grok adapter는 access token과 user ID를 메모리에서만 선택하고 refresh token을 선택·사용·전송하지 않습니다.
-5. 실제 계정 fixture 수집과 Developer ID 공증은 별도 credential 승인이 필요합니다.
+4. Claude는 `Scripts/ClaudeBridge/install_bridge.py`를 사용자가 승인해 설치하면 기존 status-line 출력을 보존하면서 `rate_limits` 필드만 `0600` snapshot으로 기록합니다.
+5. 로그인, OAuth refresh, browser cookie import, 모델 호출, credit 소비, credential write-back은 하지 않습니다. Grok adapter는 access token과 user ID를 메모리에서만 선택하고 refresh token을 선택·사용·전송하지 않습니다.
+6. 실제 계정 fixture 수집과 Developer ID 공증은 별도 credential 승인이 필요합니다.
 
 ## 문서
 

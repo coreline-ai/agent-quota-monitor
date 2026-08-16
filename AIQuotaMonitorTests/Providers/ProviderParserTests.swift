@@ -96,6 +96,21 @@ final class ProviderParserTests: XCTestCase {
         try? FileManager.default.removeItem(at: directory)
     }
 
+    func testClaudeSnapshotProviderWaitsForFirstBridgeEvent() async throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let snapshotURL = directory.appending(path: "pending.json")
+        let provider = ClaudeStatusSnapshotProvider(
+            snapshotURL: snapshotURL,
+            validator: CredentialFileValidator(allowedRoots: [directory])
+        )
+
+        let result = await provider.fetchQuota()
+        XCTAssertEqual(result.snapshot.state, .notConfigured)
+        XCTAssertNil(result.snapshot.lastAttempt)
+    }
+
     func testCodexAdapterSendsOnlyReadOnlyMethods() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

@@ -15,6 +15,9 @@ struct ClaudeStatusSnapshotProvider: QuotaProvider {
     }
 
     func fetchQuota() async -> ProviderFetchResult {
+        guard case .available = await availability() else {
+            return ProviderFetchResult(snapshot: .unavailable(id, state: .notConfigured))
+        }
         let provider = ReadOnlyPayloadProvider(id: id, parser: ClaudeQuotaParser()) {
             try validator.validate(snapshotURL)
             return try Data(contentsOf: snapshotURL, options: [.mappedIfSafe])

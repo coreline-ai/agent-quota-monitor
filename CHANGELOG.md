@@ -13,6 +13,8 @@
 - Added a dedicated Provider connection screen with explicit apply semantics and Codex CLI auto-discovery, including NVM installs.
 - Fixed live Codex app-server reads by waiting for the rate-limit response before terminating the long-running process.
 - Fixed Grok login parsing for the fractional ISO 8601 expiration format emitted by Grok CLI.
+- Added an opt-in Claude status-line bridge that preserves the existing command and persists only documented rate-limit fields to a `0600` snapshot.
+- Claude now reports connection pending, rather than collection failure, until the bridge receives its first documented status-line event.
 
 ### Known limitations
 

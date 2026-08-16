@@ -1,0 +1,44 @@
+# Fixture Manifest
+
+확인일: `2026-08-16 KST`
+
+모든 현재 fixture는 공식 문서·공식 CLI schema를 바탕으로 QuotaBeacon을 위해 새로 작성한 **synthetic payload**다. 실제 계정 응답 또는 외부 저장소 fixture가 아니다.
+
+| Provider | 파일 | 종류 | 계약 근거 | redaction | 실제 검증 |
+|---|---|---|---|---|---|
+| Claude | `claude-{normal,partial,errors,malformed}.json` | synthetic | 공식 status-line field | 개인 field 미포함 | 미실행 |
+| Codex | `codex-{normal,partial,errors,malformed}.json` | synthetic | `codex-cli 0.145.0` 생성 schema | ID·workspace·account 미포함 | 미실행 |
+| Grok | `grok-{normal,partial,errors,malformed}.json` | synthetic | 공식 Settings Usage 설명 | 계정 field 미포함 | machine contract 미확정 |
+| ZAI | `zai-{normal,partial,errors,malformed}.json` | synthetic | 공식 usage-query UX | key·account 미포함 | machine contract 미확정 |
+
+## Schema fingerprint
+
+`Scripts/ProviderProbe/fixture_guard.py manifest`가 각 파일 SHA-256을 계산한다. malformed fixture는 고의로 JSON parsing에 실패해야 하며 나머지는 JSON object여야 한다.
+
+```text
+725744a2011b20d4d0b64ce0e251cf79f36c10c8017fcc5c71aeb53688d3c60a  Claude/claude-errors.json
+ee3bb016ee1b1e395152b5db18af8d7e785aa19a2ab541c9bd9d13dfa8a2a0f0  Claude/claude-malformed.json
+6dab46e166c00dc822cee35942c60722417237e370809f2569bd38e3328bdd23  Claude/claude-normal.json
+be33fe136a9d446471f73f372d18e791bcb9f1ec5293db61bc069dee583da397  Claude/claude-partial.json
+0b4d6016625e6313fabba827333ea820eb5a5508db95061dcf2a9622a4a30992  Codex/codex-errors.json
+51da86c570330d901fbc1aa167c4c41bc17049bbac37ee1e4758769c930aab4f  Codex/codex-malformed.json
+8e6a20103356d06d08edf396f76cbcf2b87dd9b35e3964659ef08efd71c56aa9  Codex/codex-normal.json
+4d79dc39a8242ed27c282a9bad4e52a8cfed0e367b211ec7307014b595d31f5e  Codex/codex-partial.json
+97351cf842b8ecc5a5760f069b8d29590e281ce06be5fc7d4ec2b338ab6d66c1  Grok/grok-errors.json
+4c15a2a3a6c4718a4fc8ac41b41d57348a4c53277cb6f578120d5cb32c6b47ff  Grok/grok-malformed.json
+a8552a75863037fa9074df4a22869fe6088eedb29be3e85d02700bb3cb902fda  Grok/grok-normal.json
+44fda0a6ccdb5e091c38a8396cb924ab92e9ffdaf294cf500bf9cc4cde37b959  Grok/grok-partial.json
+02ba6d331db44db9acc9f2c8e3083495254b50f83c5f9d1e05ef64a26683bcdf  ZAI/zai-errors.json
+13ac8a7b6d413cdf6acbab6735799433f5c949c8789b856a2670d049e7900cf5  ZAI/zai-malformed.json
+085898be9011affb0486259c60e2d99a860cb9de6432678f5a5ddc8f9ae93a94  ZAI/zai-normal.json
+219b89aa765374fb764678e455d59c0810de2e61b702f5f668fc0a0ac3f81493  ZAI/zai-partial.json
+```
+
+## 직접 fixture 추가 조건
+
+1. 사용자 승인 후 read-only probe만 실행한다.
+2. 모델/thread/credit 소비 endpoint를 호출하지 않는다.
+3. credential hash·mtime이 전후 동일해야 한다.
+4. token, key, cookie, 이메일, account/workspace/session ID, 홈 경로를 제거한다.
+5. 원본 payload를 repository나 log에 남기지 않는다.
+6. 수집일, client version, schema fingerprint, redaction 결과를 이 문서에 추가한다.

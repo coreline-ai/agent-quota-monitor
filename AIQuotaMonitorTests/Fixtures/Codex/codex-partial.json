@@ -1,0 +1,6 @@
+{
+  "rateLimits": {
+    "primary": { "usedPercent": 6, "windowDurationMins": 300 },
+    "planType": "team"
+  }
+}

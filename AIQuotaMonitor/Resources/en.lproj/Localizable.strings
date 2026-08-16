@@ -1,0 +1,12 @@
+"status.accessibilityLabel" = "AI quota monitor";
+"status.tooltip" = "QuotaBeacon";
+"menu.title" = "AI quota";
+"menu.placeholderMessage" = "Provider connections and quota windows will appear here after the data layer is ready.";
+"menu.openDashboard" = "Open Dashboard";
+"menu.refresh" = "Refresh";
+"menu.quit" = "Quit QuotaBeacon";
+"dashboard.windowTitle" = "QuotaBeacon";
+"dashboard.title" = "QuotaBeacon";
+"dashboard.placeholderMessage" = "A new, independent quota dashboard is being built from the ground up.";
+"settings.project" = "Project";
+"settings.minimumOS" = "Minimum OS";

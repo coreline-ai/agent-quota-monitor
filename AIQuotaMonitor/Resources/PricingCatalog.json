@@ -1,0 +1,46 @@
+{
+  "version": "2026-08-16",
+  "effectiveDate": "2026-08-16",
+  "entries": [
+    {
+      "provider": "codex",
+      "model": "gpt-5.2",
+      "aliases": ["gpt-5.2-2025-12-11"],
+      "inputPerMillion": 1.75,
+      "outputPerMillion": 14.0,
+      "cacheReadPerMillion": 0.175,
+      "cacheWritePerMillion": null,
+      "sourceURL": "https://developers.openai.com/api/docs/models/gpt-5.2"
+    },
+    {
+      "provider": "claude",
+      "model": "claude-sonnet-5",
+      "aliases": [],
+      "inputPerMillion": 2.0,
+      "outputPerMillion": 10.0,
+      "cacheReadPerMillion": 0.2,
+      "cacheWritePerMillion": 2.5,
+      "sourceURL": "https://platform.claude.com/docs/en/about-claude/models/migration-guide"
+    },
+    {
+      "provider": "grok",
+      "model": "grok-build-0.1",
+      "aliases": [],
+      "inputPerMillion": 1.0,
+      "outputPerMillion": 2.0,
+      "cacheReadPerMillion": 0.0,
+      "cacheWritePerMillion": null,
+      "sourceURL": "https://docs.x.ai/developers/models"
+    },
+    {
+      "provider": "zai",
+      "model": "glm-5.1",
+      "aliases": [],
+      "inputPerMillion": 1.4,
+      "outputPerMillion": 4.4,
+      "cacheReadPerMillion": 0.26,
+      "cacheWritePerMillion": null,
+      "sourceURL": "https://docs.z.ai/guides/overview/pricing"
+    }
+  ]
+}

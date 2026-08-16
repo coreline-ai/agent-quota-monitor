@@ -1,0 +1,12 @@
+.DS_Store
+DerivedData/
+.derivedData/
+build/
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+.build/
+__pycache__/
+*.pyc
+dist/
+Config/Signing.xcconfig

@@ -1,0 +1,8 @@
+{
+  "cases": [
+    { "status": 401, "expected": "invalidCredential" },
+    { "status": 403, "expected": "forbidden" },
+    { "status": 429, "expected": "rateLimited" },
+    { "status": 504, "expected": "timeout" }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "cases": [
+    { "status": 401, "expected": "invalidCredential" },
+    { "status": 403, "expected": "unsupportedAccount" },
+    { "status": 429, "expected": "rateLimited" },
+    { "status": 502, "expected": "server" }
+  ]
+}

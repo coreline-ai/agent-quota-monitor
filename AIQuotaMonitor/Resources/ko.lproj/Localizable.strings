@@ -1,0 +1,12 @@
+"status.accessibilityLabel" = "AI 사용량 모니터";
+"status.tooltip" = "QuotaBeacon";
+"menu.title" = "AI 사용량";
+"menu.placeholderMessage" = "데이터 계층이 준비되면 Provider 연결 상태와 quota가 여기에 표시됩니다.";
+"menu.openDashboard" = "대시보드 열기";
+"menu.refresh" = "새로고침";
+"menu.quit" = "QuotaBeacon 종료";
+"dashboard.windowTitle" = "QuotaBeacon";
+"dashboard.title" = "QuotaBeacon";
+"dashboard.placeholderMessage" = "외부 코드를 복사하지 않은 새로운 quota 대시보드를 처음부터 개발하고 있습니다.";
+"settings.project" = "프로젝트";
+"settings.minimumOS" = "최소 OS";

@@ -1,0 +1,53 @@
+name: macOS CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Greenfield reference audit
+        run: ./Scripts/audit_greenfield_references.sh .
+
+      - name: Debug build
+        run: |
+          xcodebuild \
+            -project AIQuotaMonitor.xcodeproj \
+            -scheme AIQuotaMonitor \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/AIQuotaMonitor-Debug" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Release build
+        run: |
+          xcodebuild \
+            -project AIQuotaMonitor.xcodeproj \
+            -scheme AIQuotaMonitor \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/AIQuotaMonitor-Release" \
+            CODE_SIGNING_ALLOWED=NO \
+            ARCHS='arm64 x86_64' \
+            ONLY_ACTIVE_ARCH=NO \
+            build
+
+      - name: Unit tests
+        run: |
+          xcodebuild \
+            -project AIQuotaMonitor.xcodeproj \
+            -scheme AIQuotaMonitor \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/AIQuotaMonitor-Tests" \
+            CODE_SIGNING_ALLOWED=NO \
+            -only-testing:AIQuotaMonitorTests \
+            test

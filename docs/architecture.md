@@ -56,6 +56,7 @@ flowchart LR
 - Claude Keychain OAuth usage GET adapter와 선택적 statusLine snapshot parser, Codex 공식 app-server read-only adapter
 - Grok 공식 CLI billing backend 기반 `observed · Beta` adapter, Z.ai status-only adapter와 네 Provider 독립 synthetic parser fixture
 - quota chart와 local token/cost chart를 분리한 5-section Signal Ledger dashboard
+- `TrendPresentation`의 기간 filter·Provider/window/reset grouping·freshness segment·bucket downsample과 Swift Charts `Reset Bands` 선 그래프
 - 공통 `QuotaPresentation`·`BeaconComponents`를 사용하는 Beacon Ledger popover와 한도 원장
 - AppStorage 기반 밀도·metric·reset·theme·inspector·Provider 표시 설정
 - redacted JSON/CSV export, notification threshold dedupe, SMAppService login item
@@ -105,6 +106,16 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 4. `SnapshotStore`가 부분 결과를 last-known-good와 병합하되 이전 값은 `stale`로 바꾼다.
 5. menu/dashboard는 `ProviderSnapshot`만 소비하며 credential path나 원본 payload를 보지 않는다.
 6. popover가 보이면 60초, 일반 상태 5분, 실패 시 15/60분 backoff를 적용한다.
+
+## 추세 표시 흐름
+
+1. `QuotaMonitorModel.history`의 정규화된 `ProviderSnapshot`만 `TrendPresentation`에 전달한다.
+2. 선택한 24시간·7일·30일 cutoff로 관측값을 제한하고 Provider와 `QuotaWindowKind`를 안정적인 series key로 만든다.
+3. countdown 기반 reset timestamp의 sub-second 흔들림은 reset minute identity로 정규화한다. 실제 reset cycle, freshness 변화, 기간별 최대 gap은 각각 별도 line segment가 된다.
+4. 24시간·7일·30일에 맞는 bucket으로 first·minimum·last point를 보존해 mark 수를 제한한다.
+5. 화면은 linear `LineMark`, 최신 `PointMark`, 주 series의 옅은 `AreaMark`, 25%·10% `RuleMark`, 과거 reset `RectangleMark`를 그린다.
+6. pace는 현재 reset instance의 fresh 표본만 사용하며 3개 미만, 감소 없음, reset 전 소진 없음 상태를 수치 예측과 구분한다.
+7. quota와 local token은 서로 다른 surface를 유지하며 local source가 없으면 연결 안내만 표시한다.
 
 ## Grok read-only 흐름
 

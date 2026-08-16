@@ -46,7 +46,37 @@ final class AIQuotaMonitorUITests: XCTestCase {
         XCTAssertTrue(app.buttons["dashboard.refresh"].isHittable)
 
         app.staticTexts["추세"].click()
-        XCTAssertTrue(app.scrollViews["dashboard.trends"].waitForExistence(timeout: 3))
+        let trendsScroll = app.scrollViews["dashboard.trends"]
+        XCTAssertTrue(trendsScroll.waitForExistence(timeout: 3))
+        XCTAssertTrue(app.descendants(matching: .any)["trends.range"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["trends.provider"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["trends.coverage"].exists)
+        let trendChart = app.descendants(matching: .any)["trends.chart"]
+        let trendEmpty = app.descendants(matching: .any)["trends.empty"]
+        XCTAssertTrue(trendChart.exists || trendEmpty.exists)
+        writeScreenshot(app.windows.firstMatch, name: "quotabeacon-trends-reset-bands-qa")
+        if trendChart.exists {
+            trendsScroll.swipeUp()
+            writeScreenshot(app.windows.firstMatch, name: "quotabeacon-trends-plot-qa")
+            trendsScroll.swipeDown()
+        }
+
+        let rangeControl = app.descendants(matching: .any)["trends.range"]
+        XCTAssertTrue(rangeControl.exists)
+        rangeControl.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        writeScreenshot(app.windows.firstMatch, name: "quotabeacon-trends-week-qa")
+
+        rangeControl.coordinate(withNormalizedOffset: CGVector(dx: 0.84, dy: 0.5)).click()
+        writeScreenshot(app.windows.firstMatch, name: "quotabeacon-trends-month-qa")
+
+        let providerControl = app.descendants(matching: .any)["trends.provider"]
+        XCTAssertTrue(providerControl.exists)
+        providerControl.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.5)).click()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["trends.mini.claude"].exists
+                || app.descendants(matching: .any)["trends.empty"].exists
+        )
+        writeScreenshot(app.windows.firstMatch, name: "quotabeacon-trends-all-providers-qa")
 
         app.staticTexts["데이터 소스"].click()
         XCTAssertTrue(app.staticTexts["dashboard.dataSources.title"].waitForExistence(timeout: 3))

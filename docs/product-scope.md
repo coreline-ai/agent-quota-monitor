@@ -62,6 +62,17 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Z.ai GLM Coding Plan의 quota와 
 - 아이콘: 신규 단색 메뉴바 glyph와 신규 macOS app icon 사용
 - 차트: quota window와 local token을 별도 surface로 분리
 
+### 추세 그래프: Reset Bands
+
+- 기간 선택은 `24시간 / 7일 / 30일`이며 선택 기간과 History filter·X축 domain을 동일하게 유지한다.
+- 기본 화면은 가장 긴급한 연결 Provider 하나를 선택하고, 전체 모드는 Provider별 small multiples로 분리한다.
+- Provider 안에서도 5시간·7일·주간 공용 등 quota window를 독립 series로 유지한다.
+- 실제 관측값은 직선으로만 연결하며 reset instance, stale 전환, 큰 관측 gap 전후를 이어 그리지 않는다.
+- LIVE는 실선, 캐시는 점선과 낮은 불투명도로 표시하고 25% 주의·10% 위험 기준선을 텍스트와 함께 제공한다.
+- reset 시각은 얇은 band와 경계선으로 표시하는 제품 고유 패턴 `Reset Bands`를 사용한다.
+- 실제 수집 구간이 선택 기간보다 짧으면 그래프를 임의 확대하지 않고 수집 시간·LIVE/전체 표본 수를 명시한다.
+- 로컬 token source가 없을 때 가짜 그래프를 만들지 않고 데이터 소스 연결 행동을 제공한다.
+
 ### 사용자화 범위
 
 - 화면 밀도: `균형 / 압축`

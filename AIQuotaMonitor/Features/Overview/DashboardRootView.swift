@@ -112,7 +112,11 @@ struct DashboardRootView: View {
         case .overview: OverviewView(model: model)
         case .connections: ProviderConnectionsView(model: model)
         case .limits: LimitsView(snapshots: model.snapshots)
-        case .trends: TrendsView(snapshots: model.history.isEmpty ? model.snapshots : model.history)
+        case .trends:
+            TrendsView(
+                snapshots: model.history.isEmpty ? model.snapshots : model.history,
+                onShowDataSources: { selection = .dataSources }
+            )
         case .dataSources: DataSourcesView(snapshots: model.snapshots)
         case .settings: DashboardSettingsView(model: model)
         }

@@ -25,6 +25,30 @@ final class GrokBillingProviderTests: XCTestCase {
         }
     }
 
+    func testCredentialReaderAcceptsFractionalISO8601Expiration() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let authURL = directory.appending(path: "auth.json")
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let payload: [String: Any] = [
+            "https://auth.x.ai::quotabeacon-tests": [
+                "key": "temporary-test-value",
+                "user_id": "local-test-user",
+                "expires_at": formatter.string(from: Date().addingTimeInterval(3_600)),
+            ],
+        ]
+        try JSONSerialization.data(withJSONObject: payload).write(to: authURL)
+        XCTAssertEqual(chmod(authURL.path, 0o600), 0)
+
+        let reader = GrokCredentialReader(
+            authURL: authURL,
+            validator: CredentialFileValidator(allowedRoots: [directory])
+        )
+        XCTAssertNoThrow(try reader.read())
+    }
+
     func testProviderSendsOnlyReadOnlyBillingGET() async throws {
         let fixture = try makeCredentialFile(expiresAt: Date().addingTimeInterval(3_600))
         defer { try? FileManager.default.removeItem(at: fixture.directory) }

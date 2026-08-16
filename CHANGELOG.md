@@ -11,6 +11,8 @@
 - Added unit/UI test foundations and release/security/originality scripts.
 - Fixed dashboard detail scrolling so content remains clipped below the macOS title bar and toolbar.
 - Added a dedicated Provider connection screen with explicit apply semantics and Codex CLI auto-discovery, including NVM installs.
+- Fixed live Codex app-server reads by waiting for the rate-limit response before terminating the long-running process.
+- Fixed Grok login parsing for the fractional ISO 8601 expiration format emitted by Grok CLI.
 
 ### Known limitations
 

@@ -103,8 +103,11 @@ final class ProviderParserTests: XCTestCase {
         let scriptURL = directory.appending(path: "fake-codex")
         let script = """
         #!/bin/sh
-        cat > '\(inputURL.path)'
+        IFS= read -r first
+        IFS= read -r second
+        printf '%s\\n%s\\n' "$first" "$second" > '\(inputURL.path)'
         printf '%s\\n' '{"id":2,"result":{"rateLimits":{"primary":{"usedPercent":12,"resetsAt":1786878000,"windowDurationMins":300}}}}'
+        sleep 30
         """
         try Data(script.utf8).write(to: scriptURL)
         XCTAssertEqual(chmod(scriptURL.path, 0o700), 0)

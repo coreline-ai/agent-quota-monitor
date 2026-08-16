@@ -21,6 +21,9 @@ struct DataSourcesView: View {
                         LabeledContent("마지막 성공") {
                             Text(snapshot.lastSuccessAt?.formatted() ?? "없음")
                         }
+                        LabeledContent("진단") {
+                            Text(snapshot.lastAttempt?.diagnostic?.code?.rawValue ?? "없음")
+                        }
                         LabeledContent("Fallback") {
                             Text(snapshot.windows.isEmpty ? "수치 생성 안 함" : "last-known-good cache")
                         }

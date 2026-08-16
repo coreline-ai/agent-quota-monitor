@@ -58,6 +58,9 @@ struct GrokCredentialReader: Sendable {
             let seconds = numeric > 10_000_000_000 ? numeric / 1_000 : numeric
             return Date(timeIntervalSince1970: seconds)
         }
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractional.date(from: text) { return date }
         return ISO8601DateFormatter().date(from: text)
     }
 }

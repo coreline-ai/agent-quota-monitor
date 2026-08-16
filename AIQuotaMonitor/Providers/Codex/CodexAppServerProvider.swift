@@ -23,7 +23,9 @@ struct CodexAppServerProvider: QuotaProvider {
                 arguments: ["app-server", "--stdio"],
                 environment: environment(),
                 standardInput: requestData(),
-                timeout: .seconds(12)
+                timeout: .seconds(12),
+                closesStandardInput: false,
+                outputCompletion: { hasResponse(requestID: 2, in: $0) }
             )
             guard output.exitCode == 0 || !output.standardOutput.isEmpty,
                   let result = try resultPayload(from: output.standardOutput) else {
@@ -55,13 +57,22 @@ struct CodexAppServerProvider: QuotaProvider {
 
     private func resultPayload(from output: Data) throws -> Data? {
         for line in output.split(separator: 0x0A) {
-            guard let object = try JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
+            guard let object = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
                   object["id"] as? Int == 2 else { continue }
             if object["error"] != nil { throw ProviderErrorCode.invalidCredential }
             guard let result = object["result"] else { throw ProviderErrorCode.malformedPayload }
             return try JSONSerialization.data(withJSONObject: result)
         }
         return nil
+    }
+
+    private func hasResponse(requestID: Int, in output: Data) -> Bool {
+        output.split(separator: 0x0A).contains { line in
+            guard let object = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any] else {
+                return false
+            }
+            return object["id"] as? Int == requestID
+        }
     }
 
     private func environment() -> [String: String] {

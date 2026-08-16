@@ -55,10 +55,14 @@ private final class ManagedProcess: @unchecked Sendable {
         }
     }
 
-    func send(_ input: Data?) throws {
+    func send(_ input: Data?, closesInput: Bool) throws {
         guard let input else { return }
         try inputPipe.fileHandleForWriting.write(contentsOf: input)
-        try inputPipe.fileHandleForWriting.close()
+        if closesInput { try inputPipe.fileHandleForWriting.close() }
+    }
+
+    func closeInput() {
+        try? inputPipe.fileHandleForWriting.close()
     }
 
     func finishReading() {
@@ -66,6 +70,11 @@ private final class ManagedProcess: @unchecked Sendable {
         errorPipe.fileHandleForReading.readabilityHandler = nil
         output.append(outputPipe.fileHandleForReading.readDataToEndOfFile())
         error.append(errorPipe.fileHandleForReading.readDataToEndOfFile())
+    }
+
+    func stopReading() {
+        outputPipe.fileHandleForReading.readabilityHandler = nil
+        errorPipe.fileHandleForReading.readabilityHandler = nil
     }
 
     func stop() {
@@ -85,13 +94,15 @@ actor ProcessRunner {
         arguments: [String],
         environment: [String: String]? = nil,
         standardInput: Data? = nil,
-        timeout: Duration = .seconds(12)
+        timeout: Duration = .seconds(12),
+        closesStandardInput: Bool = true,
+        outputCompletion: (@Sendable (Data) -> Bool)? = nil
     ) async throws -> ProcessOutput {
         let managed = ManagedProcess()
         managed.configure(executable: executable, arguments: arguments, environment: environment, input: standardInput)
         do {
             try managed.process.run()
-            try managed.send(standardInput)
+            try managed.send(standardInput, closesInput: closesStandardInput)
         } catch {
             managed.stop()
             managed.forceStop()
@@ -101,6 +112,20 @@ actor ProcessRunner {
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: timeout)
         while managed.process.isRunning {
+            if outputCompletion?(managed.output.value()) == true {
+                managed.closeInput()
+                managed.stop()
+                for _ in 0 ..< 10 where managed.process.isRunning {
+                    try? await Task.sleep(for: .milliseconds(20))
+                }
+                managed.forceStop()
+                managed.stopReading()
+                return ProcessOutput(
+                    exitCode: managed.process.isRunning ? -1 : managed.process.terminationStatus,
+                    standardOutput: managed.output.value(),
+                    standardError: managed.error.value()
+                )
+            }
             if Task.isCancelled {
                 managed.stop()
                 try? await Task.sleep(for: .milliseconds(200))

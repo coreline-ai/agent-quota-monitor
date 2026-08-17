@@ -153,6 +153,30 @@ final class ProviderParserTests: XCTestCase {
         try? FileManager.default.removeItem(at: directory)
     }
 
+    func testCodexAdapterFindsSiblingRuntimeWhenGUIPathOmitsIt() async throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let executableURL = directory.appending(path: "codex")
+        let runtimeURL = directory.appending(path: "quotabeacon-test-runtime")
+
+        try Data("#!/usr/bin/env quotabeacon-test-runtime\n".utf8).write(to: executableURL)
+        try Data("""
+        #!/bin/sh
+        IFS= read -r first
+        IFS= read -r second
+        printf '%s\\n' '{"id":2,"result":{"rateLimits":{"primary":{"usedPercent":12,"resetsAt":1786878000,"windowDurationMins":300}}}}'
+        sleep 30
+        """.utf8).write(to: runtimeURL)
+        XCTAssertEqual(chmod(executableURL.path, 0o700), 0)
+        XCTAssertEqual(chmod(runtimeURL.path, 0o700), 0)
+
+        let result = await CodexAppServerProvider(executableURL: executableURL).fetchQuota()
+
+        XCTAssertEqual(result.snapshot.state, .partial)
+        XCTAssertEqual(result.snapshot.windows.first?.usedRatio.value ?? -1, 0.12, accuracy: 0.0001)
+        try? FileManager.default.removeItem(at: directory)
+    }
+
     private func fixture(_ provider: String, _ name: String) throws -> Data {
         let resource = "\(provider.lowercased())-\(name)"
         guard let url = Bundle(for: Self.self).url(forResource: resource, withExtension: "json") else {

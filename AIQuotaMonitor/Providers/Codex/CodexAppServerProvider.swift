@@ -77,6 +77,16 @@ struct CodexAppServerProvider: QuotaProvider {
 
     private func environment() -> [String: String] {
         var value = ProcessInfo.processInfo.environment
+        // GUI-launched macOS apps do not inherit the user's interactive shell
+        // PATH. npm/nvm installs expose `codex` as a `#!/usr/bin/env node`
+        // launcher, so keep its sibling `node` runtime discoverable without
+        // sourcing shell profiles or executing user-controlled startup files.
+        let executableDirectory = executableURL.deletingLastPathComponent().standardizedFileURL.path
+        let inheritedPath = value["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+        let pathEntries = inheritedPath.split(separator: ":").map(String.init)
+        if !pathEntries.contains(executableDirectory) {
+            value["PATH"] = ([executableDirectory] + pathEntries).joined(separator: ":")
+        }
         value["CODEX_ANALYTICS_ENABLED"] = "false"
         return value
     }

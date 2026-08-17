@@ -97,10 +97,14 @@ struct TrendsView: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 16) {
             Text("Provider")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(palette.secondaryText)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(width: 64, alignment: .leading)
+                .accessibilityIdentifier("trends.provider.label")
             Picker("Provider", selection: $selectedProvider) {
                 Text("전체").tag(Optional<ProviderID>.none)
                 ForEach(availableProviders) { provider in
@@ -111,7 +115,8 @@ struct TrendsView: View {
             .labelsHidden()
             .accessibilityLabel("추세 Provider")
             .accessibilityIdentifier("trends.provider")
-            .frame(maxWidth: 300)
+            .frame(minWidth: 360, idealWidth: 420, maxWidth: 480)
+            .layoutPriority(1)
             Spacer(minLength: 0)
         }
     }

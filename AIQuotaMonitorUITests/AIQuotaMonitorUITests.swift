@@ -101,6 +101,34 @@ final class AIQuotaMonitorUITests: XCTestCase {
         writeScreenshot(app.windows.firstMatch, name: "quotabeacon-settings-qa")
     }
 
+    func testDashboardChromeStaysSeparatedAndPinned() {
+        let app = XCUIApplication()
+        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST"] = "1"
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 5))
+        let window = app.windows.firstMatch
+        let sidebarButton = app.buttons["dashboard.toggleSidebar"]
+        XCTAssertTrue(sidebarButton.waitForExistence(timeout: 3))
+        XCTAssertGreaterThan(sidebarButton.frame.midX, window.frame.midX)
+
+        let sidebarEntry = app.staticTexts["연결"]
+        XCTAssertTrue(sidebarEntry.isHittable)
+        sidebarButton.click()
+        XCTAssertFalse(sidebarEntry.isHittable)
+        sidebarButton.click()
+        XCTAssertTrue(sidebarEntry.isHittable)
+
+        app.staticTexts["추세"].click()
+        XCTAssertTrue(app.staticTexts["dashboard.trends.title"].waitForExistence(timeout: 3))
+        let providerLabel = app.staticTexts["trends.provider.label"]
+        let providerControl = app.descendants(matching: .any)["trends.provider"]
+        XCTAssertTrue(providerLabel.exists)
+        XCTAssertTrue(providerControl.exists)
+        XCTAssertLessThanOrEqual(providerLabel.frame.maxX + 8, providerControl.frame.minX)
+        writeScreenshot(window, name: "quotabeacon-dashboard-chrome-qa")
+    }
+
     private func writeScreenshot(_ element: XCUIElement, name: String) {
         addScreenshot(element.screenshot(), name: name)
     }

@@ -1,5 +1,14 @@
 import SwiftUI
 
+@MainActor
+final class DashboardChromeModel: ObservableObject {
+    @Published var isSidebarVisible = true
+
+    func toggleSidebar() {
+        isSidebarVisible.toggle()
+    }
+}
+
 enum DashboardSection: String, CaseIterable, Identifiable {
     case overview
     case connections
@@ -33,6 +42,7 @@ enum DashboardSection: String, CaseIterable, Identifiable {
 
 struct DashboardRootView: View {
     @ObservedObject var model: QuotaMonitorModel
+    @ObservedObject var chrome: DashboardChromeModel
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage(QuotaPreferenceKey.theme) private var theme = QuotaVisualTheme.system
     @State private var selection = DashboardSection.overview
@@ -42,68 +52,80 @@ struct DashboardRootView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
-            VStack(spacing: 0) {
-                List(DashboardSection.allCases, selection: $selection) { section in
-                    Label(section.label, systemImage: section.symbol).tag(section)
-                }
-
+        HStack(spacing: 0) {
+            if chrome.isSidebarVisible {
+                sidebar
+                    .frame(width: 210)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
                 Divider()
-
-                VStack(spacing: 8) {
-                    Button {
-                        selection = .connections
-                    } label: {
-                        Label("Provider 연결", systemImage: "link.badge.plus")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .help("Codex, Claude, Grok, Gemini, GLM 연결 설정")
-                    .accessibilityIdentifier("dashboard.openConnections")
-
-                    Button {
-                        Task { await model.refresh() }
-                    } label: {
-                        Label("새로고침", systemImage: "arrow.clockwise")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .disabled(model.isRefreshing)
-                    .accessibilityIdentifier("dashboard.refresh")
-                }
-                .buttonStyle(.bordered)
-                .padding(12)
             }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 210)
-        } detail: {
-            VStack(spacing: 0) {
-                HStack(spacing: 10) {
-                    Text(selection.label)
-                        .font(.headline)
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .frame(height: 46)
-                .foregroundStyle(palette.primaryText)
-                .background(palette.canvas)
-                .zIndex(1)
-
-                Divider()
-
-                detail
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background {
-                        LinearGradient(
-                            colors: [palette.canvas, palette.accent.opacity(0.065)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    }
-                    .clipped()
-                    .zIndex(0)
-            }
+            detailColumn
         }
+        .animation(.easeInOut(duration: 0.18), value: chrome.isSidebarVisible)
         .frame(minWidth: 760, minHeight: 520)
         .preferredColorScheme(theme.preferredColorScheme)
-        .accessibilityIdentifier("dashboard.root")
+    }
+
+    private var sidebar: some View {
+        VStack(spacing: 0) {
+            List(DashboardSection.allCases, selection: $selection) { section in
+                Label(section.label, systemImage: section.symbol).tag(section)
+            }
+
+            Divider()
+
+            VStack(spacing: 8) {
+                Button {
+                    selection = .connections
+                } label: {
+                    Label("Provider 연결", systemImage: "link.badge.plus")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .help("Codex, Claude, Grok, Gemini, GLM 연결 설정")
+                .accessibilityIdentifier("dashboard.openConnections")
+
+                Button {
+                    Task { await model.refresh() }
+                } label: {
+                    Label("새로고침", systemImage: "arrow.clockwise")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .disabled(model.isRefreshing)
+                .accessibilityIdentifier("dashboard.refresh")
+            }
+            .buttonStyle(.bordered)
+            .padding(12)
+        }
+    }
+
+    private var detailColumn: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Text(selection.label)
+                    .font(.headline)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .frame(height: 46)
+            .foregroundStyle(palette.primaryText)
+            .background(palette.canvas)
+            .zIndex(1)
+
+            Divider()
+
+            detail
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background {
+                    LinearGradient(
+                        colors: [palette.canvas, palette.accent.opacity(0.065)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
+                .clipped()
+                .zIndex(0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     @ViewBuilder

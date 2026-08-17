@@ -69,7 +69,8 @@ struct DashboardRootView: View {
     private var sidebar: some View {
         VStack(spacing: 0) {
             List(DashboardSection.allCases, selection: $selection) { section in
-                Label(section.label, systemImage: section.symbol).tag(section)
+                DashboardSidebarLabel(title: section.label, symbol: section.symbol)
+                    .tag(section)
             }
 
             Divider()
@@ -78,7 +79,7 @@ struct DashboardRootView: View {
                 Button {
                     selection = .connections
                 } label: {
-                    Label("Provider 연결", systemImage: "link.badge.plus")
+                    DashboardSidebarLabel(title: "Provider 연결", symbol: "link.badge.plus")
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .help("Codex, Claude, Grok, Gemini, GLM 연결 설정")
@@ -87,7 +88,7 @@ struct DashboardRootView: View {
                 Button {
                     Task { await model.refresh() }
                 } label: {
-                    Label("새로고침", systemImage: "arrow.clockwise")
+                    DashboardSidebarLabel(title: "새로고침", symbol: "arrow.clockwise")
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .disabled(model.isRefreshing)
@@ -142,6 +143,26 @@ struct DashboardRootView: View {
         case .dataSources: DataSourcesView(snapshots: model.snapshots)
         case .settings: DashboardSettingsView(model: model)
         }
+    }
+}
+
+private struct DashboardSidebarLabel: View {
+    let title: String
+    let symbol: String
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(systemName: symbol)
+                .resizable()
+                .scaledToFit()
+                .symbolRenderingMode(.monochrome)
+                .frame(width: 17, height: 17, alignment: .center)
+                .frame(width: 22, height: 22, alignment: .center)
+                .accessibilityHidden(true)
+            Text(title)
+                .lineLimit(1)
+        }
+        .frame(minHeight: 22)
     }
 }
 

@@ -153,6 +153,9 @@ class SafeValidationTests(unittest.TestCase):
     def test_safe_version_handles_missing_cli(self, _which: mock.Mock) -> None:
         self.assertEqual(subject.safe_version("missing"), {"installed": False})
 
+    def test_inventory_includes_official_antigravity_cli(self) -> None:
+        self.assertEqual(subject.PROVIDER_COMMANDS["gemini"], ("agy",))
+
     @mock.patch("safe_validation.subprocess.run", side_effect=subject.subprocess.TimeoutExpired(["tool"], 1))
     def test_run_command_converts_timeout_to_safe_state(self, _run: mock.Mock) -> None:
         self.assertIsNone(subject.run_command(["tool"], timeout=1))

@@ -1,0 +1,13 @@
+Antigravity CLI 1.1.13
+GEMINI MODELS
+Models within this group: Gemini Flash, Gemini Pro
+Weekly Limit Remaining
+64%
+Refreshes in 2d 3h
+Five Hour Limit Remaining
+90%
+Refreshes in 4h 59m
+CLAUDE AND GPT MODELS
+Weekly Limit Remaining
+3%
+Refreshes in 1d

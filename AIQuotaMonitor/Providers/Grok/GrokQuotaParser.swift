@@ -74,9 +74,17 @@ struct GrokQuotaParser: QuotaPayloadParser {
 
     private func windowKind(for periodType: String?) -> QuotaWindowKind {
         let normalized = periodType?.uppercased() ?? ""
-        if normalized.contains("WEEK") { return .sharedWeekly }
-        if normalized.contains("MONTH") { return .custom("월간 공용") }
-        return .custom("공용 크레딧")
+        switch normalized {
+        case let value where value.contains("WEEK"):
+            return .sharedWeekly
+        case let value where value.contains("MONTH"):
+            return .custom("월간 공용")
+        default:
+            // Do not infer a five-hour subscription window from a future or
+            // unknown billing period. Only observed official period contracts
+            // receive a dedicated product label.
+            return .custom("공용 크레딧")
+        }
     }
 
     private func parseDate(_ value: String?) -> Date? {

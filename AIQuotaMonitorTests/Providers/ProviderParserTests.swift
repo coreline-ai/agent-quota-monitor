@@ -74,6 +74,11 @@ final class ProviderParserTests: XCTestCase {
         XCTAssertThrowsError(try GrokQuotaParser().parse(negativeBalance, observedAt: observedAt)) {
             XCTAssertEqual($0 as? ProviderErrorCode, .malformedPayload)
         }
+
+        let fiveHourLike = Data(#"{"config":{"creditUsagePercent":10,"currentPeriod":{"type":"FIVE_HOUR","end":"2026-09-01T00:00:00Z"}}}"#.utf8)
+        let unknownPeriod = try GrokQuotaParser().parse(fiveHourLike, observedAt: observedAt)
+        XCTAssertEqual(unknownPeriod.windows.first?.kind, .custom("공용 크레딧"))
+        XCTAssertNotEqual(unknownPeriod.windows.first?.kind, .fiveHour)
     }
 
     func testMalformedFixturesFailTyped() {

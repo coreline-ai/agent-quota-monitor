@@ -38,6 +38,7 @@ struct MenuBarPlaceholderView: View {
     @AppStorage(QuotaPreferenceKey.providerVisible(.claude)) private var showClaude = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.codex)) private var showCodex = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.grok)) private var showGrok = true
+    @AppStorage(QuotaPreferenceKey.providerVisible(.gemini)) private var showGemini = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.zai)) private var showZAI = true
     @State private var scope = MenuProviderScope.all
     @State private var selection: ProviderID?
@@ -267,6 +268,7 @@ struct MenuBarPlaceholderView: View {
         case .claude: showClaude
         case .codex: showCodex
         case .grok: showGrok
+        case .gemini: showGemini
         case .zai: showZAI
         }
     }

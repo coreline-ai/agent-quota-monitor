@@ -43,6 +43,7 @@ struct ClaudeKeychainCredentialReader: ClaudeCredentialReading {
             case .timeout: throw ProviderErrorCode.timeout
             case .cancelled: throw ProviderErrorCode.cancelled
             case .launchFailed: throw ProviderErrorCode.io
+            case .outputTooLarge: throw ProviderErrorCode.malformedPayload
             }
         }
         guard output.exitCode == 0 else {

@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS = [ROOT / "AIQuotaMonitor", ROOT / "AIQuotaMonitorTests" / "Fixtures"]
-TEXT_SUFFIXES = {".swift", ".json", ".strings", ".xcconfig"}
+TEXT_SUFFIXES = {".swift", ".json", ".txt", ".strings", ".xcconfig"}
 PATTERNS = {
     "private-key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
     "provider-secret": re.compile(r"(?i)\b(?:sk|xai|glm)-[A-Za-z0-9_-]{16,}\b"),

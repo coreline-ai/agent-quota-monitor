@@ -17,3 +17,9 @@ The optional Z.ai GLM integration executes the separately installed official
 `glm-plan-usage` Claude Code plugin (Apache-2.0) from the user's Claude plugin
 cache. The plugin is not copied into, linked with, or distributed inside
 QuotaBeacon.
+
+The optional Gemini integration executes the separately installed Google
+Antigravity CLI (`agy`) and sends only its documented `/usage` command. The CLI
+is not copied into, linked with, or distributed inside QuotaBeacon. Its use is
+governed separately by Google's applicable product terms; this notice does not
+relicense that external product under QuotaBeacon's MIT License.

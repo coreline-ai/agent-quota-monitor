@@ -1,6 +1,6 @@
 # Provider 계약 기준
 
-확인일: `2026-08-16 KST`
+확인일: `2026-08-17 KST`
 
 이 문서는 공식 문서, 로컬에 설치된 공식 client가 관측한 계약, 승인된 redacted 실계정 probe만 기록한다. 외부 프로젝트 source·fixture는 제품에 사용하지 않았다.
 
@@ -19,6 +19,7 @@
 | Claude | `observed` | Claude Code macOS Keychain + Anthropic OAuth usage GET | 5시간·7일·Fable 주간 사용률과 reset; 각 window 독립 누락 가능 | 실계정 read-only probe 및 설치 앱 LIVE PASS, Beta |
 | Codex | `observed` | 공식 `codex app-server` JSON-RPC | primary·secondary, reset, duration, plan, credits | 실계정 read-only probe PASS, `codex-cli 0.145.0` |
 | Grok | `observed` | xAI 공식 Grok Build CLI billing backend | 공용 사용률, weekly/monthly 기간, reset, 선불 잔액 | 실계정 read-only probe PASS, Beta |
+| Gemini | `observed` | 공식 Antigravity CLI `/usage`의 `GEMINI MODELS` 그룹 | 5시간·주간 잔여율, 선택적 refresh 시각 | 실계정 read-only TUI probe PASS, Beta |
 | Z.ai | `observed` | `claude-glm` profile + 공식 `glm-plan-usage` plugin `0.0.1` | 5시간 token·월간 MCP 사용률, reset 없음 | 실계정 read-only probe 및 설치 앱 LIVE PASS, Beta |
 
 ## Claude
@@ -47,6 +48,7 @@
 ## Grok
 
 - 공식 FAQ는 유료 사용자의 단일 weekly pool, product별 breakdown, weekly reset, Extra Usage Credits UI를 설명한다.
+- `2026-08-17` 기준 공식 FAQ와 설치된 `grok 1.0.4` billing artifact에는 구독용 5시간 window가 없다. Grok API의 RPS/TPM은 API team rate limit이며 이 구독 pool과 합산하지 않는다.
 - xAI 공식 Grok Build source와 설치 binary에서 CLI billing backend `GET https://cli-chat-proxy.grok.com/v1/billing?format=credits` 및 `config.creditUsagePercent`, `currentPeriod`, `billingPeriodEnd`, `prepaidBalance` 계약을 확인했다.
 - installed client: `grok 1.0.4 (d846eb93d94d) [stable]`.
 - 설치 버전의 `grok agent stdio`에 `x.ai/billing`을 호출하면 `-32601 Method not found`가 반환된다. 따라서 ACP RPC는 제품 경로로 사용하지 않고, 공식 client가 사용하는 first-party billing backend만 `observed · Beta`로 호출한다.
@@ -55,6 +57,19 @@
 - `2026-08-16` 승인된 실계정 probe에서 HTTP 200과 필요한 field 존재를 확인했고 credential SHA-256·mtime·mode는 불변이었다. 실제 값과 원본 response는 저장하지 않았다.
 - timeout: HTTP 전체 15초. client/source 계약 변경 시 synthetic fixture, unit test, redacted 실계정 probe를 다시 실행한다.
 - 브라우저 cookie, WebView, model call, auto-topup endpoint 사용은 금지한다.
+
+## Gemini
+
+- Google은 `2026-06-18`부터 개인용 Gemini Code Assist, Google AI Pro, Google AI Ultra 요청을 기존 Gemini CLI에서 중단하고 Antigravity CLI로 이전했다.
+- 개발 장비의 `gemini 0.55.1` Google login은 공식 migration 오류를 반환했다. 따라서 기존 Gemini CLI `/stats model`은 개인 계정의 제품 수집 경로로 사용하지 않는다.
+- 공식 Antigravity CLI `agy 1.1.13`의 `/usage`는 `GEMINI MODELS` 그룹에 `Weekly Limit Remaining`과 `Five Hour Limit Remaining`을 표시한다. Claude/GPT 그룹은 별도이며 Gemini Provider에 포함하지 않는다.
+- QuotaBeacon은 설치된 `agy` process만 실행하고 `/usage` 외 prompt, model, tool, agent command를 보내지 않는다. 모델 요청 0건과 tool call 0건을 검증한다.
+- `~/.gemini/antigravity-cli/settings.json`에서는 credential이 아닌 기존 trusted workspace 경로만 선택한다. account, token, cookie, session DB를 직접 읽지 않는다.
+- stdout은 메모리에서만 처리하고 ANSI를 제거한 뒤 `GEMINI MODELS`와 다음 group marker 사이의 두 limit label·잔여율·선택적 refresh duration만 정규화한다. Account/email과 다른 모델 그룹은 폐기한다.
+- PTY의 terminal query 응답은 단계별 bounded timer를 보존하며 외부 process guard는 45초, combined output 상한은 512 KiB다.
+- `usedRatio = 1 - remainingRatio`로 계산하며 값 범위가 `0...100`이 아니면 malformed로 처리한다. `Quota available`처럼 reset이 노출되지 않으면 `resetsAt=nil`을 보존한다.
+- 성공 결과는 5분 재사용한다. CLI 없음·로그인 실패·trusted workspace 없음·output drift는 typed state이며 정적 요금제 상한으로 현재 사용률을 추정하지 않는다.
+- Antigravity CLI TUI는 machine-readable stable API가 아니므로 `observed · Beta`다. QuotaBeacon은 Gemini CLI/Code Assist 내부 endpoint나 OAuth credential을 직접 호출하지 않는다.
 
 ## Z.ai
 

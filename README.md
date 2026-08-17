@@ -7,7 +7,7 @@
 
 <p align="center"> 
   <strong>AI coding agent의 quota 신호를 한곳에서 읽는 macOS 메뉴 막대 앱</strong><br>
-  Claude Code · Codex · Grok Build · Z.ai GLM의 구독 한도와 reset을 출처별로 분리해 보여줍니다.
+  Claude Code · Codex · Grok Build · Gemini · Z.ai GLM의 구독 한도와 reset을 출처별로 분리해 보여줍니다.
 </p>
 
 <p align="center">
@@ -76,6 +76,7 @@
 | ✦ **Claude Code** | macOS Keychain의 기존 Claude Code access token + Anthropic OAuth usage `GET` | 5시간, 7일, Fable 주간, reset | `observed` · Beta |
 | `>_` **Codex** | 공식 `codex app-server`의 `account/rateLimits/read` | primary, secondary, plan, credits, reset | `observed` |
 | ◎ **Grok Build** | 검증된 `~/.grok/auth.json` + xAI 공식 CLI billing backend `GET` | 주간/월간 공용 사용률, reset, 선불 잔액 | `observed` · Beta |
+| ◆ **Gemini** | 공식 Antigravity CLI `agy`의 `/usage`에서 Gemini 그룹만 격리 | 5시간·주간 잔여율, 선택적 reset | `observed` · Beta |
 | 〽 **Z.ai GLM** | 기존 `claude-glm` profile + 설치된 공식 `glm-plan-usage` plugin | 5시간 token, 월간 MCP 사용률 | `observed` · Beta |
 
 `nil`이나 누락 field는 0%로 바꾸지 않습니다. 공개·안정 machine-readable 계약이 없는 값은 임의로 생성하지 않고 typed state로 표시합니다. 상세 계약은 [Provider 계약 기준](docs/provider-contracts.md)을 참고하세요.
@@ -143,10 +144,11 @@ Scripts/package_release.sh
 | Claude | Claude Code 로그인 | refresh token 사용, statusLine 수정, 브라우저 cookie import |
 | Codex | Codex CLI 로그인 및 실행 파일 탐지 | login/logout, thread/model method, credit 소비 |
 | Grok | `grok login`, credential file mode `0600` | refresh token 사용, auto-topup, WebView 수집 |
+| Gemini | `agy` 로그인 후 신뢰된 workspace에서 `/usage` 확인 | OAuth 파일·내부 endpoint 접근, Claude/GPT 그룹 저장, 모델 prompt 전송 |
 | GLM | `claude-glm` profile과 공식 plugin 설치 | shell profile 실행, plugin 복제, Model/Tool usage 저장 |
 
 > [!NOTE]
-> GLM은 공식 plugin이 출력하는 quota section만 읽습니다. plugin/profile 미설치, 계정 정책, output drift가 있으면 수치를 추정하지 않고 연결 상태와 진단만 보여줍니다.
+> Gemini는 개인 Gemini CLI의 현재 Antigravity 이전 정책에 맞춰 공식 `agy /usage`만 사용합니다. GLM은 공식 plugin이 출력하는 quota section만 읽습니다. CLI/plugin/profile 미설치, 계정 정책, output drift가 있으면 수치를 추정하지 않고 연결 상태와 진단만 보여줍니다.
 
 ## 🔐 보안과 개인정보
 
@@ -175,6 +177,7 @@ python3 Scripts/ProviderProbe/test_safe_validation.py
 python3 Scripts/ProviderProbe/test_claude_oauth_usage_probe.py
 python3 Scripts/ProviderProbe/test_grok_billing_probe.py
 python3 Scripts/ProviderProbe/test_glm_plugin_usage_probe.py
+python3 Scripts/ProviderProbe/test_gemini_cli_quota_probe.py
 Scripts/audit_originality.sh
 Scripts/security_audit.py
 Scripts/verify_release.sh /path/to/QuotaBeacon.app
@@ -188,7 +191,7 @@ CI는 pull request와 push에서 Greenfield reference audit, Debug/Release build
 AIQuotaMonitor/
 ├── Application/      # 앱 수명주기, refresh coordinator, local history
 ├── Domain/           # snapshot, quota window, provenance, typed state
-├── Providers/        # Claude, Codex, Grok, Z.ai read-only adapters
+├── Providers/        # Claude, Codex, Grok, Gemini, Z.ai read-only adapters
 ├── Features/         # MenuBar, Overview, Limits, Trends, Settings
 ├── DesignSystem/     # theme, density, quota presentation
 └── Security/         # redaction, credential/path validation
@@ -204,6 +207,7 @@ docs/                 # architecture, security, contracts, QA evidence
 - [제품 범위](docs/product-scope.md)
 - [Provider 계약](docs/provider-contracts.md)
 - [Provider 실환경 검증](docs/provider-validation-2026-08-16.md)
+- [Grok·Gemini 추가 검증](docs/provider-validation-2026-08-17.md)
 - [보안·개인정보](docs/security-privacy.md)
 - [배포 가이드](docs/distribution.md)
 - [외부 참조 등록부](docs/reference-register.md)
@@ -218,4 +222,4 @@ QuotaBeacon은 Greenfield 방식으로 독립 구현되었습니다. 외부 오�
 
 [MIT License](LICENSE) © 2026 [Coreline-ai](https://github.com/coreline-ai)
 
-외부에 별도로 설치되는 선택적 GLM plugin 등은 각 프로젝트의 라이선스를 따르며 QuotaBeacon에 복사·링크·번들되지 않습니다. 자세한 내용은 [Third-Party Notices](THIRD_PARTY_NOTICES.md)를 확인하세요.
+외부에 별도로 설치되는 Antigravity CLI와 선택적 GLM plugin 등은 각 제품·프로젝트의 약관과 라이선스를 따르며 QuotaBeacon에 복사·링크·번들되지 않습니다. 자세한 내용은 [Third-Party Notices](THIRD_PARTY_NOTICES.md)를 확인하세요.

@@ -23,6 +23,8 @@
 | 로컬 Codex `0.145.0` app-server 생성 schema | 공식 client schema | `account/rateLimits/read`, primary/secondary/credits 확인 | 계정 응답·credential 저장 | 사용 가능 |
 | xAI Grok FAQ·Models | 공식 문서 | weekly usage UX와 Grok Build 가격 근거 확인 | cookie·model endpoint 수집 | 사용 가능 |
 | xAI Grok Build billing extension | 공식 client source | first-party billing URL·header·response field 확인 | source code·fixture 복사, billing 외 endpoint 호출 | 계약 관찰만 |
+| [Gemini Code Assist quotas](https://developers.google.com/gemini-code-assist/resources/quotas) | 공식 문서 | 개인 Gemini CLI의 Antigravity migration, 일일 quota 성격 확인 | 정적 plan 상한으로 현재 사용률 추정 | 사용 가능 |
+| [Antigravity CLI codelab](https://codelabs.developers.google.com/sdd-agy-cli) | Google 공식 codelab | 공식 CLI `/usage`와 모델 quota 사용자 흐름 확인 | codelab code·이미지·prompt 복사 | command 계약 관찰만 |
 | Z.ai Coding Plan overview·policy·pricing | 공식 문서 | 5시간/주간 limit, 지원 도구 제한, 가격 catalog 확인 | 지원 밖 Coding endpoint 호출 | 사용 가능 |
 | OpenAI·Anthropic model pricing | 공식 문서 | 날짜가 있는 API 정가 catalog 작성 | 구독 결제액으로 오표시 | 사용 가능 |
 | Apple Developer 문서 | 공식 문서 | status item, Keychain, 서명, 공증 검증 | 해당 없음 | 사용 가능 |
@@ -65,5 +67,6 @@ ID:
 | REF-P2-CLAUDE-OAUTH | 2026-08-16 | 설치된 Orca bundle + 승인된 redacted 실계정 probe | `Claude Code-credentials` access token, OAuth usage GET, 5시간/7일/Fable scoped, 180초 cache·429 backoff 필요 | 독립 Swift Keychain reader/GET adapter/parser + synthetic fixture | 사용 안 함 |
 | REF-P2-CODEX | 2026-08-16 | 로컬 `codex app-server generate-json-schema` | `account/rateLimits/read`, primary/secondary/credits | `Providers/Codex/**` | 사용 안 함 |
 | REF-P2-GROK | 2026-08-16 | https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/src/extensions/billing.rs | first-party billing GET, 사용률·기간·reset·선불 잔액 | 독립 Swift adapter + synthetic parser | 사용 안 함 |
+| REF-P2-GEMINI | 2026-08-17 | https://developers.google.com/gemini-code-assist/resources/quotas + https://codelabs.developers.google.com/sdd-agy-cli | 개인 Gemini CLI migration, 공식 Antigravity `/usage`의 Gemini 주간·5시간 group | 독립 Swift PTY adapter/parser + synthetic TUI fixture | 사용 안 함; 설치된 official CLI process만 실행 |
 | REF-P2-ZAI | 2026-08-16 | https://docs.z.ai/devpack/extension/usage-query-plugin + https://github.com/zai-org/zai-coding-plugins | `claude-glm` 환경을 받는 official script `0.0.1`, `Platform: ZAI`, Quota limit의 5시간 token·월간 MCP percentage | 독립 Swift profile reader/locator/output extractor/parser/provider + synthetic fixture | 사용 안 함; 설치된 official script를 외부 process로만 실행 |
 | REF-P4-PRICE | 2026-08-16 | Provider별 공식 model pricing | 날짜·출처·alias 기반 API 정가 | `Resources/PricingCatalog.json` | 사용 안 함 |

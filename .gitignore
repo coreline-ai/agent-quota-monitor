@@ -8,5 +8,6 @@ xcuserdata/
 .build/
 __pycache__/
 *.pyc
+*.profraw
 dist/
 Config/Signing.xcconfig

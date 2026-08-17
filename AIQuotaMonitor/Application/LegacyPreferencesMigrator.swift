@@ -10,6 +10,8 @@ enum LegacyPreferencesMigrator {
         "claude.snapshotEnabled",
         "grok.readOnlyEnabled",
         "grok.authPath",
+        "gemini.readOnlyEnabled",
+        "gemini.executablePath",
         "zai.readOnlyEnabled",
         "notifications.authorized",
         "notifications.enabled",
@@ -23,6 +25,7 @@ enum LegacyPreferencesMigrator {
         "appearance.provider.claude.visible",
         "appearance.provider.codex.visible",
         "appearance.provider.grok.visible",
+        "appearance.provider.gemini.visible",
         "appearance.provider.zai.visible"
     ]
 

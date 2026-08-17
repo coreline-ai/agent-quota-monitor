@@ -26,7 +26,7 @@ def inspect(path: Path) -> list[str]:
     text = path.read_text(encoding="utf-8", errors="replace")
     if SENSITIVE_VALUE.search(text):
         errors.append("sensitive value pattern")
-    if "malformed" not in path.stem:
+    if "malformed" not in path.stem and path.suffix.lower() == ".json":
         try:
             value = json.loads(text)
         except json.JSONDecodeError as error:
@@ -42,6 +42,11 @@ def inspect(path: Path) -> list[str]:
                     for index, child in enumerate(node):
                         walk(child, f"{prefix}[{index}]")
             walk(value)
+    elif "malformed" not in path.stem and path.suffix.lower() == ".txt":
+        if path.parent.name == "Gemini" and "GEMINI MODELS" not in text:
+            errors.append("missing Gemini contract marker")
+    elif "malformed" not in path.stem:
+        errors.append(f"unsupported fixture format: {path.suffix or '<none>'}")
     return errors
 
 

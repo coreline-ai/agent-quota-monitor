@@ -32,9 +32,15 @@ class GrokBillingProbeTests(unittest.TestCase):
         encoded = json.dumps(result)
         self.assertTrue(result["creditUsagePercentPresent"])
         self.assertTrue(result["resetPresent"])
+        self.assertEqual(result["periodCategory"], "weekly")
         self.assertNotIn("42.5", encoded)
         self.assertNotIn("private-reset", encoded)
         self.assertNotIn("1234", encoded)
+
+        unknown = subject.summarize_response({
+            "config": {"currentPeriod": {"type": "FIVE_HOUR"}},
+        })
+        self.assertEqual(unknown["periodCategory"], "unknown")
 
     def test_unchanged_compares_only_integrity_fields(self) -> None:
         before = {"sha256": "a", "mtimeNs": 1, "mode": "0600"}

@@ -1,0 +1,8 @@
+GEMINI MODELS
+Models within this group: Gemini Flash, Gemini Pro
+Weekly Limit Remaining
+100%
+Quota available
+CLAUDE AND GPT MODELS
+Five Hour Limit Remaining
+1%

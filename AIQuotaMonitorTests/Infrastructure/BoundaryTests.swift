@@ -49,6 +49,69 @@ final class BoundaryTests: XCTestCase {
         }
     }
 
+    func testProcessRunnerCancellationStopsChild() async throws {
+        let runner = ProcessRunner()
+        let task = Task {
+            try await runner.run(
+                executable: URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", "sleep 5"],
+                timeout: .seconds(10)
+            )
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        task.cancel()
+        do {
+            _ = try await task.value
+            XCTFail("Expected cancellation")
+        } catch {
+            XCTAssertEqual(error as? ProcessRunnerError, .cancelled)
+        }
+    }
+
+    func testProcessRunnerUsesRequestedDirectoryAndCapsOutput() async throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let runner = ProcessRunner()
+        let output = try await runner.run(
+            executable: URL(fileURLWithPath: "/bin/pwd"),
+            arguments: [],
+            timeout: .seconds(2),
+            currentDirectory: directory
+        )
+        let reportedDirectory = String(decoding: output.standardOutput, as: UTF8.self)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        // macOS may canonicalize the public /var alias to /private/var in pwd.
+        XCTAssertTrue(
+            reportedDirectory == directory.path || reportedDirectory == "/private\(directory.path)",
+            "unexpected working directory: \(reportedDirectory)"
+        )
+
+        do {
+            _ = try await runner.run(
+                executable: URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", "printf '0123456789'"],
+                timeout: .seconds(2),
+                maximumOutputBytes: 5
+            )
+            XCTFail("Expected output cap failure")
+        } catch {
+            XCTAssertEqual(error as? ProcessRunnerError, .outputTooLarge)
+        }
+
+        do {
+            _ = try await runner.run(
+                executable: URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", "printf '1234'; printf '5678' >&2"],
+                timeout: .seconds(2),
+                maximumOutputBytes: 6
+            )
+            XCTFail("Expected combined output cap failure")
+        } catch {
+            XCTAssertEqual(error as? ProcessRunnerError, .outputTooLarge)
+        }
+    }
+
     func testRefreshPolicyBackoffAndRedaction() {
         let policy = RefreshPolicy.standard
         XCTAssertEqual(policy.interval(popoverVisible: true, idle: false, consecutiveFailures: 0), .seconds(60))

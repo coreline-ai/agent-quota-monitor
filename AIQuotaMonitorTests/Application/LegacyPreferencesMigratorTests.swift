@@ -14,6 +14,9 @@ final class LegacyPreferencesMigratorTests: XCTestCase {
         defaults.setPersistentDomain(
             [
                 "claude.readOnlyEnabled": true,
+                "gemini.readOnlyEnabled": true,
+                "gemini.executablePath": "/tmp/synthetic-agy",
+                "appearance.provider.gemini.visible": false,
                 "appearance.theme": "midnight",
                 "unrelated.secret": "must-not-migrate"
             ],
@@ -26,6 +29,9 @@ final class LegacyPreferencesMigratorTests: XCTestCase {
         )
 
         XCTAssertTrue(defaults.bool(forKey: "claude.readOnlyEnabled"))
+        XCTAssertTrue(defaults.bool(forKey: "gemini.readOnlyEnabled"))
+        XCTAssertEqual(defaults.string(forKey: "gemini.executablePath"), "/tmp/synthetic-agy")
+        XCTAssertFalse(defaults.bool(forKey: "appearance.provider.gemini.visible"))
         XCTAssertEqual(defaults.string(forKey: "appearance.theme"), "midnight")
         XCTAssertNil(defaults.object(forKey: "unrelated.secret"))
     }

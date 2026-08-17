@@ -54,7 +54,7 @@ flowchart LR
 - cancellation/timeout HTTP·Process 경계와 read-only credential validator/Keychain
 - versioned JSON history, 90일·25 MiB retention, Provider별 single-flight refresh
 - Claude Keychain OAuth usage GET adapter와 선택적 statusLine snapshot parser, Codex 공식 app-server read-only adapter
-- Grok 공식 CLI billing backend와 Z.ai 공식 `glm-plan-usage` plugin 기반 `observed · Beta` adapter, 네 Provider 독립 synthetic parser fixture
+- Grok 공식 CLI billing backend, Antigravity CLI Gemini `/usage`, Z.ai 공식 `glm-plan-usage` plugin 기반 `observed · Beta` adapter, 다섯 Provider 독립 synthetic parser fixture
 - quota chart와 local token/cost chart를 분리한 5-section Signal Ledger dashboard
 - `TrendPresentation`의 기간 filter·Provider/window/reset grouping·freshness segment·bucket downsample과 Swift Charts `Reset Bands` 선 그래프
 - 공통 `QuotaPresentation`·`BeaconComponents`를 사용하는 Beacon Ledger popover와 한도 원장
@@ -124,6 +124,15 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 3. access token과 user ID만 메모리에서 선택하며 refresh token은 선택·사용·전송하지 않는다.
 4. `GrokBillingProvider`가 `https://cli-chat-proxy.grok.com/v1/billing?format=credits`에 GET을 보내고 redirect·cookie·cache를 거부한다.
 5. `GrokQuotaParser`가 사용률·기간·reset·선불 잔액만 공통 domain으로 정규화하며 원본 payload와 계정 정보는 저장하지 않는다.
+
+## Gemini Antigravity CLI 흐름
+
+1. 사용자가 Gemini Beta 연결을 켜고 자동 탐지된 공식 `agy` 실행 파일을 승인한다.
+2. `GeminiCLIRuntimeLocator`가 실행 파일과 credential이 아닌 기존 trusted workspace 하나를 확인한다.
+3. `GeminiCLIQuotaExecutor`가 고정된 PTY command로 공식 CLI를 열고 `/usage`만 전송한다. terminal protocol 응답은 단계 timeout을 재시작하지 않으며 prompt/model/tool/agent command는 전송하지 않는다.
+4. `GeminiQuotaParser`가 ANSI를 제거하고 `GEMINI MODELS` 그룹의 주간·5시간 잔여율과 refresh duration만 정규화한다.
+5. account/email, Claude/GPT 그룹, session output, raw TUI는 즉시 폐기하며 history에는 normalized ratio와 provenance만 저장한다.
+6. 성공 결과는 5분 재사용한다. current Gemini CLI 개인 login migration 오류 때문에 기존 `/stats model`과 내부 Code Assist endpoint는 사용하지 않는다.
 
 ## Claude read-only 흐름
 

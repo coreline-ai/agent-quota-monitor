@@ -1,10 +1,11 @@
 # AIQuotaMonitor 제품 범위
 
 작성일: `2026-08-16 KST`
+최근 범위 갱신: `2026-08-17 KST`
 
 ## 제품 목표
 
-QuotaBeacon은 Codex, Claude Code, Grok Build, Z.ai GLM Coding Plan의 quota와 로컬 토큰 사용량을 한곳에서 확인하는 완전 신규 macOS 메뉴바 앱이다. Xcode module·scheme·target의 내부 이름은 `AIQuotaMonitor`로 유지한다.
+QuotaBeacon은 Codex, Claude Code, Grok Build, Gemini, Z.ai GLM Coding Plan의 quota와 로컬 토큰 사용량을 한곳에서 확인하는 완전 신규 macOS 메뉴바 앱이다. Xcode module·scheme·target의 내부 이름은 `AIQuotaMonitor`로 유지한다.
 
 외부 앱은 사용자가 겪는 문제와 Provider 제약을 이해하는 참고자료로만 사용한다. 코드, 프로젝트 구조, 화면, 에셋은 가져오지 않는다.
 
@@ -17,7 +18,8 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Z.ai GLM Coding Plan의 quota와 
 ## MVP
 
 - macOS status item과 popover
-- Claude Code, Codex, Grok Build, Z.ai GLM quota 상태
+- Claude Code, Codex, Grok Build, Gemini, Z.ai GLM quota 상태
+- 공식 Antigravity CLI `/usage`의 Gemini 모델 그룹 기반 5시간·주간 quota 연결(Beta)
 - Z.ai 공식 Usage Query plugin 기반 5시간 token·월간 MCP quota 연결(Beta)
 - quota window별 사용률, reset, 출처, 최신성
 - 연결 필요, 인증 만료, 지원 불가, stale, 부분 성공 상태
@@ -37,7 +39,8 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Z.ai GLM Coding Plan의 quota와 
 - 모바일·Watch·iCloud
 - 자체 backend와 telemetry
 - 브라우저 cookie/WebView 수집
-- 네 Provider 외 확장
+- 다섯 Provider 외 확장
+- Antigravity의 Claude·GPT 모델 그룹과 Gemini 웹·모바일 앱 quota
 - credential 자동 refresh/write-back
 - 팀 중앙 관리
 
@@ -81,7 +84,7 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Z.ai GLM Coding Plan의 quota와 
 - reset 표기: `남은 시간 / 절대 시각`
 - 테마 preset: `시스템 / 미드나이트 / 그래파이트`
 - 상세 방식: Provider 행 아래 `상세 펼침 / 요약만`
-- Provider 노출: Claude, Codex, Grok, GLM을 메뉴 막대에서 개별 표시/숨김
+- Provider 노출: Claude, Codex, Grok, Gemini, GLM을 메뉴 막대에서 개별 표시/숨김
 - 설정은 수집 pipeline이나 credential 승인 상태를 변경하지 않고 화면 표현에만 적용
 
 ### 디자인 토큰 원칙

@@ -34,9 +34,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             dashboardWindowController.showWindow()
         }
         if environment["AIQUOTAMONITOR_UI_TEST_POPOVER"] == "1" {
-            // Give NSStatusBar one run-loop cycle to attach and lay out its button.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-                self?.statusItemController?.showPopoverForTesting()
+            // Status-item attachment can lag behind the app window on a busy UI
+            // test host. Repeating an idempotent `show` keeps this test-only hook
+            // deterministic without changing production interaction.
+            for delay in [0.25, 0.75, 1.5] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                    self?.statusItemController?.showPopoverForTesting()
+                }
             }
         }
         model.startAutomaticRefresh()

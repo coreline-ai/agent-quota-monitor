@@ -64,6 +64,23 @@ final class HTTPRefreshTests: XCTestCase {
         let count = await provider.fetchCount()
         XCTAssertEqual(count, 1)
     }
+
+    func testRefreshCoordinatorKeepsOtherProvidersWhenGeminiFails() async {
+        let providers: [any QuotaProvider] = ProviderID.allCases.map { provider in
+            FixedStateProvider(
+                id: provider,
+                state: provider == .gemini ? .failed : .partial
+            )
+        }
+        let coordinator = RefreshCoordinator(providers: providers, store: SnapshotStore())
+        let snapshots = await coordinator.refreshAll()
+
+        XCTAssertEqual(snapshots.count, ProviderID.allCases.count)
+        XCTAssertEqual(snapshots.first { $0.provider == .gemini }?.state, .failed)
+        for provider in ProviderID.allCases where provider != .gemini {
+            XCTAssertEqual(snapshots.first { $0.provider == provider }?.state, .partial)
+        }
+    }
 }
 
 private actor CountingProvider: QuotaProvider {
@@ -79,4 +96,15 @@ private actor CountingProvider: QuotaProvider {
     }
 
     func fetchCount() -> Int { count }
+}
+
+private struct FixedStateProvider: QuotaProvider {
+    let id: ProviderID
+    let state: ProviderState
+
+    func availability() async -> ProviderAvailability { .available }
+
+    func fetchQuota() async -> ProviderFetchResult {
+        ProviderFetchResult(snapshot: .unavailable(id, state: state))
+    }
 }

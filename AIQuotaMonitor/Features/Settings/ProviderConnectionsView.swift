@@ -9,6 +9,12 @@ struct ProviderConnectionsView: View {
     @State private var claudeEnabled = false
     @State private var grokEnabled = false
     @State private var grokAuthPath = ""
+    @State private var geminiEnabled = false
+    @State private var geminiPath = ""
+    @State private var geminiEvidence = GeminiConnectionEvidence(
+        ready: false,
+        message: "Gemini 연결 환경을 확인하는 중입니다."
+    )
     @State private var zaiEnabled = false
     @State private var zaiEvidence = ZAIConnectionEvidence(
         ready: false,
@@ -77,6 +83,26 @@ struct ProviderConnectionsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                SignalPanel(title: "Gemini · Antigravity Beta") {
+                    Toggle("공식 Antigravity Gemini quota 읽기", isOn: $geminiEnabled)
+                        .accessibilityIdentifier("connections.gemini.toggle")
+                    HStack {
+                        TextField("agy 실행 파일 절대 경로", text: $geminiPath)
+                            .disabled(!geminiEnabled)
+                            .accessibilityIdentifier("connections.gemini.path")
+                        Button("자동 찾기") {
+                            geminiPath = ProviderConnectionDefaults.geminiExecutablePath()
+                            updateGeminiEvidence()
+                        }
+                        .disabled(!geminiEnabled)
+                    }
+                    connectionEvidence(geminiEvidence.message, available: geminiEvidence.ready)
+                        .accessibilityIdentifier("connections.gemini.evidence")
+                    Text("공식 agy의 /usage만 실행해 GEMINI MODELS 그룹의 주간·5시간 잔여량만 정규화합니다. 화면에 함께 렌더된 계정 정보와 Claude/GPT 그룹은 즉시 폐기하며 OAuth 파일·모델 prompt에는 접근하지 않습니다.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 SignalPanel(title: "Z.ai GLM · Beta") {
                     Toggle("공식 GLM Usage Query 읽기", isOn: $zaiEnabled)
                         .accessibilityIdentifier("connections.zai.toggle")
@@ -101,6 +127,7 @@ struct ProviderConnectionsView: View {
                             codexEnabled = false
                             claudeEnabled = false
                             grokEnabled = false
+                            geminiEnabled = false
                             zaiEnabled = false
                             Task { await applyConfiguration() }
                         }
@@ -126,6 +153,10 @@ struct ProviderConnectionsView: View {
                     message: "연결을 켜면 공식 plugin과 claude-glm 프로필을 확인합니다."
                 )
         }
+        .onChange(of: geminiEnabled) { _, _ in updateGeminiEvidence() }
+        .onChange(of: geminiPath) { _, _ in
+            if geminiEnabled { updateGeminiEvidence() }
+        }
     }
 
     @ViewBuilder
@@ -148,6 +179,10 @@ struct ProviderConnectionsView: View {
         grokEnabled = defaults.bool(forKey: "grok.readOnlyEnabled")
         grokAuthPath = defaults.string(forKey: "grok.authPath")
             ?? ProviderConnectionDefaults.grokAuthPath
+        geminiEnabled = defaults.bool(forKey: "gemini.readOnlyEnabled")
+        geminiPath = defaults.string(forKey: "gemini.executablePath")
+            ?? ProviderConnectionDefaults.geminiExecutablePath()
+        updateGeminiEvidence()
         zaiEnabled = defaults.bool(forKey: "zai.readOnlyEnabled")
         zaiEvidence = zaiEnabled
             ? ZAIConnectionEvidence.inspect()
@@ -163,8 +198,10 @@ struct ProviderConnectionsView: View {
 
         let normalizedCodexPath = expanded(codexPath)
         let normalizedGrokPath = expanded(grokAuthPath)
+        let normalizedGeminiPath = expanded(geminiPath)
         codexPath = normalizedCodexPath
         grokAuthPath = normalizedGrokPath
+        geminiPath = normalizedGeminiPath
 
         let defaults = UserDefaults.standard
         defaults.set(codexEnabled, forKey: "codex.readOnlyEnabled")
@@ -172,6 +209,8 @@ struct ProviderConnectionsView: View {
         defaults.set(claudeEnabled, forKey: "claude.readOnlyEnabled")
         defaults.set(grokEnabled, forKey: "grok.readOnlyEnabled")
         defaults.set(normalizedGrokPath, forKey: "grok.authPath")
+        defaults.set(geminiEnabled, forKey: "gemini.readOnlyEnabled")
+        defaults.set(normalizedGeminiPath, forKey: "gemini.executablePath")
         defaults.set(zaiEnabled, forKey: "zai.readOnlyEnabled")
 
         await model.applyProviderConfiguration(
@@ -180,6 +219,8 @@ struct ProviderConnectionsView: View {
             claudeEnabled: claudeEnabled,
             grokEnabled: grokEnabled,
             grokAuthPath: normalizedGrokPath,
+            geminiEnabled: geminiEnabled,
+            geminiExecutablePath: normalizedGeminiPath,
             zaiEnabled: zaiEnabled
         )
 
@@ -188,6 +229,7 @@ struct ProviderConnectionsView: View {
             case .codex: codexEnabled
             case .claude: claudeEnabled
             case .grok: grokEnabled
+            case .gemini: geminiEnabled
             case .zai: zaiEnabled
             }
         }
@@ -216,6 +258,27 @@ struct ProviderConnectionsView: View {
 
     private func expanded(_ path: String) -> String {
         (path as NSString).expandingTildeInPath
+    }
+
+    private func updateGeminiEvidence() {
+        guard geminiEnabled else {
+            geminiEvidence = GeminiConnectionEvidence(
+                ready: false,
+                message: "연결을 켜면 공식 Antigravity CLI와 신뢰된 workspace를 확인합니다."
+            )
+            return
+        }
+        let path = expanded(geminiPath)
+        guard !path.isEmpty else {
+            geminiEvidence = GeminiConnectionEvidence(
+                ready: false,
+                message: "Antigravity CLI 실행 파일 경로를 확인해 주세요."
+            )
+            return
+        }
+        geminiEvidence = GeminiConnectionEvidence.inspect(
+            locator: GeminiCLIRuntimeLocator(executableURL: URL(fileURLWithPath: path))
+        )
     }
 }
 
@@ -249,5 +312,16 @@ enum ProviderConnectionDefaults {
             if fileManager.isExecutableFile(atPath: candidate) { return candidate }
         }
         return "/opt/homebrew/bin/codex"
+    }
+
+    static func geminiExecutablePath(fileManager: FileManager = .default) -> String {
+        let home = fileManager.homeDirectoryForCurrentUser
+        let candidates = [
+            home.appending(path: ".local/bin/agy").path,
+            "/opt/homebrew/bin/agy",
+            "/usr/local/bin/agy",
+        ]
+        return candidates.first(where: fileManager.isExecutableFile(atPath:))
+            ?? home.appending(path: ".local/bin/agy").path
     }
 }

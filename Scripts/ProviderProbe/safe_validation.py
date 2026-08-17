@@ -31,6 +31,7 @@ PROVIDER_COMMANDS = {
     "codex": ("codex",),
     "claude": ("claude",),
     "grok": ("grok",),
+    "gemini": ("agy",),
     "glm": ("glm", "zai"),
 }
 
@@ -55,6 +56,7 @@ def default_file_targets(*, home: Path | None = None) -> list[FileTarget]:
         FileTarget("claude_plugins", home_path(".claude/plugins/installed_plugins.json", home=home)),
         FileTarget("grok_auth", home_path(".grok/auth.json", home=home)),
         FileTarget("grok_config", home_path(".grok/config.toml", home=home)),
+        FileTarget("gemini_antigravity_settings", home_path(".gemini/antigravity-cli/settings.json", home=home)),
         FileTarget("zai_config", home_path(".zai/config.json", home=home)),
         FileTarget("glm_config", home_path(".glm/config.json", home=home)),
     ]

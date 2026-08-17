@@ -57,7 +57,7 @@ struct DashboardRootView: View {
                         Label("Provider 연결", systemImage: "link.badge.plus")
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .help("Codex, Claude, Grok 연결 설정")
+                    .help("Codex, Claude, Grok, Gemini, GLM 연결 설정")
                     .accessibilityIdentifier("dashboard.openConnections")
 
                     Button {

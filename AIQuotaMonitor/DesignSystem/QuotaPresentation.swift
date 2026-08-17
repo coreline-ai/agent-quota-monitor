@@ -229,6 +229,7 @@ extension ProviderID {
         case .claude: "sparkles"
         case .codex: "terminal.fill"
         case .grok: "scope"
+        case .gemini: "diamond.fill"
         case .zai: "waveform.path.ecg"
         }
     }
@@ -238,6 +239,7 @@ extension ProviderID {
         case .claude: "Claude"
         case .codex: "Codex"
         case .grok: "Grok"
+        case .gemini: "Gemini"
         case .zai: "GLM"
         }
     }
@@ -247,6 +249,7 @@ extension ProviderID {
         case .claude: Color(red: 0.93, green: 0.47, blue: 0.28)
         case .codex: Color(red: 0.35, green: 0.53, blue: 0.96)
         case .grok: Color(red: 0.68, green: 0.58, blue: 0.94)
+        case .gemini: Color(red: 0.38, green: 0.67, blue: 0.96)
         case .zai: Color(red: 0.20, green: 0.74, blue: 0.72)
         }
     }

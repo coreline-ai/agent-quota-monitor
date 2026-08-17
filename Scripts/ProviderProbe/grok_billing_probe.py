@@ -43,10 +43,21 @@ def summarize_response(payload: Any) -> dict[str, Any]:
     config = config if isinstance(config, dict) else {}
     period = config.get("currentPeriod")
     period = period if isinstance(period, dict) else {}
+    period_type = period.get("type")
+    normalized_period = period_type.upper() if isinstance(period_type, str) else ""
+    if "WEEK" in normalized_period:
+        period_category = "weekly"
+    elif "MONTH" in normalized_period:
+        period_category = "monthly"
+    elif normalized_period:
+        period_category = "unknown"
+    else:
+        period_category = "absent"
     return {
         "configPresent": bool(config),
         "creditUsagePercentPresent": "creditUsagePercent" in config,
         "currentPeriodPresent": bool(period),
+        "periodCategory": period_category,
         "resetPresent": "end" in period or "billingPeriodEnd" in config,
         "prepaidBalancePresent": "prepaidBalance" in config,
         "unifiedBillingEvidencePresent": "isUnifiedBillingUser" in config,

@@ -15,6 +15,7 @@ struct DashboardSettingsView: View {
     @AppStorage(QuotaPreferenceKey.providerVisible(.claude)) private var showClaude = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.codex)) private var showCodex = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.grok)) private var showGrok = true
+    @AppStorage(QuotaPreferenceKey.providerVisible(.gemini)) private var showGemini = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.zai)) private var showZAI = true
     @State private var notificationStatus = "권한 미확인"
     @State private var historyStatus = ""
@@ -50,7 +51,7 @@ struct DashboardSettingsView: View {
                 }
 
                 SignalPanel(title: "Provider 연결") {
-                    Label("왼쪽 사이드바의 ‘연결’에서 Codex·Claude·Grok·GLM을 관리합니다.", systemImage: "link.badge.plus")
+                    Label("왼쪽 사이드바의 ‘연결’에서 Codex·Claude·Grok·Gemini·GLM을 관리합니다.", systemImage: "link.badge.plus")
                         .foregroundStyle(.secondary)
                 }
 
@@ -124,10 +125,15 @@ struct DashboardSettingsView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("메뉴 막대에 표시").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                    HStack(spacing: 18) {
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 104), spacing: 12)],
+                        alignment: .leading,
+                        spacing: 8
+                    ) {
                         providerToggle(.claude, isOn: $showClaude)
                         providerToggle(.codex, isOn: $showCodex)
                         providerToggle(.grok, isOn: $showGrok)
+                        providerToggle(.gemini, isOn: $showGemini)
                         providerToggle(.zai, isOn: $showZAI)
                     }
                 }

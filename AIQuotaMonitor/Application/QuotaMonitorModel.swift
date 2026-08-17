@@ -81,6 +81,8 @@ final class QuotaMonitorModel: ObservableObject {
         claudeEnabled: Bool,
         grokEnabled: Bool,
         grokAuthPath: String,
+        geminiEnabled: Bool,
+        geminiExecutablePath: String,
         zaiEnabled: Bool
     ) async {
         await coordinator.cancelAll()
@@ -90,6 +92,8 @@ final class QuotaMonitorModel: ObservableObject {
             claudeEnabled: claudeEnabled,
             grokEnabled: grokEnabled,
             grokAuthPath: grokAuthPath,
+            geminiEnabled: geminiEnabled,
+            geminiExecutablePath: geminiExecutablePath,
             zaiEnabled: zaiEnabled
         )
         coordinator = RefreshCoordinator(providers: providers, store: SnapshotStore())
@@ -146,6 +150,10 @@ final class QuotaMonitorModel: ObservableObject {
         }
         for snapshot in snapshots where snapshot.state == .available || snapshot.state == .partial {
             for window in snapshot.windows where window.provenance.freshness != .stale {
+                // Antigravity occasionally renders a percentage before its reset
+                // evidence is complete. Do not turn that partial observation into
+                // an actionable Gemini notification.
+                if snapshot.provider == .gemini, window.resetsAt == nil { continue }
                 guard let event = QuotaAlertEvaluator.event(for: window.remainingRatio) else { continue }
                 let percent = Int((window.remainingRatio * 100).rounded())
                 let key = NotificationKey(
@@ -173,6 +181,9 @@ final class QuotaMonitorModel: ObservableObject {
             grokEnabled: defaults.bool(forKey: "grok.readOnlyEnabled"),
             grokAuthPath: defaults.string(forKey: "grok.authPath")
                 ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: ".grok/auth.json").path,
+            geminiEnabled: defaults.bool(forKey: "gemini.readOnlyEnabled"),
+            geminiExecutablePath: defaults.string(forKey: "gemini.executablePath")
+                ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: ".local/bin/agy").path,
             zaiEnabled: defaults.bool(forKey: "zai.readOnlyEnabled")
         )
     }
@@ -191,6 +202,8 @@ final class QuotaMonitorModel: ObservableObject {
         claudeEnabled: Bool,
         grokEnabled: Bool,
         grokAuthPath: String,
+        geminiEnabled: Bool,
+        geminiExecutablePath: String,
         zaiEnabled: Bool
     ) -> [any QuotaProvider] {
         let claude: any QuotaProvider
@@ -218,6 +231,17 @@ final class QuotaMonitorModel: ObservableObject {
             grok = StateOnlyProvider(id: .grok, state: .notConfigured)
         }
 
+        let gemini: any QuotaProvider
+        if geminiEnabled, !geminiExecutablePath.isEmpty {
+            gemini = GeminiCLIQuotaProvider(
+                locator: GeminiCLIRuntimeLocator(
+                    executableURL: URL(fileURLWithPath: geminiExecutablePath)
+                )
+            )
+        } else {
+            gemini = StateOnlyProvider(id: .gemini, state: .notConfigured)
+        }
+
         let zai: any QuotaProvider
         if zaiEnabled {
             zai = ZAIPluginUsageProvider()
@@ -228,6 +252,7 @@ final class QuotaMonitorModel: ObservableObject {
             claude,
             codex,
             grok,
+            gemini,
             zai
         ]
     }

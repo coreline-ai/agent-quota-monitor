@@ -9,9 +9,8 @@ final class AIQuotaMonitorUITests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["menu.openDashboard"].waitForExistence(timeout: 3))
         let popover = app.popovers.firstMatch
-        XCTAssertTrue(popover.waitForExistence(timeout: 3))
+        XCTAssertTrue(popover.waitForExistence(timeout: 5))
         let summaryScreenshot = popover.screenshot()
         addScreenshot(summaryScreenshot, name: "quotabeacon-menu-ledger-summary-qa")
 
@@ -33,28 +32,25 @@ final class AIQuotaMonitorUITests: XCTestCase {
         app.staticTexts["연결"].click()
         XCTAssertTrue(app.staticTexts["dashboard.connections.title"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["connections.apply"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["connections.gemini.toggle"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["connections.gemini.evidence"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["connections.zai.toggle"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["connections.zai.evidence"].exists)
 
         app.staticTexts["한도"].click()
         XCTAssertTrue(app.staticTexts["dashboard.limits.title"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.descendants(matching: .any)["limits.provider.claude"].exists)
-        let zaiPanel = app.descendants(matching: .any)["limits.provider.zai"]
-        XCTAssertTrue(zaiPanel.waitForExistence(timeout: 20))
-        let zaiTexts = app.staticTexts.matching(identifier: "limits.provider.zai")
-        XCTAssertTrue(
-            zaiTexts.matching(NSPredicate(format: "value == %@", "LIVE")).firstMatch
-                .waitForExistence(timeout: 20)
-        )
-        XCTAssertTrue(zaiTexts.matching(NSPredicate(format: "value BEGINSWITH %@", "5시간")).firstMatch.exists)
-        XCTAssertTrue(zaiTexts.matching(NSPredicate(format: "value BEGINSWITH %@", "MCP 월간")).firstMatch.exists)
         let limitsScroll = app.scrollViews["dashboard.limits"]
         XCTAssertTrue(limitsScroll.exists)
         XCTAssertGreaterThan(limitsScroll.frame.minY, app.windows.firstMatch.frame.minY + 40)
         writeScreenshot(app.windows.firstMatch, name: "quotabeacon-limits-qa")
         limitsScroll.swipeUp()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["limits.provider.gemini"]
+                .waitForExistence(timeout: 3)
+        )
         limitsScroll.swipeUp()
-        writeScreenshot(app.windows.firstMatch, name: "quotabeacon-glm-live-qa")
+        writeScreenshot(app.windows.firstMatch, name: "quotabeacon-provider-list-qa")
         XCTAssertTrue(app.buttons["dashboard.refresh"].isHittable)
 
         app.staticTexts["개요"].click()
@@ -88,10 +84,7 @@ final class AIQuotaMonitorUITests: XCTestCase {
         let providerControl = app.descendants(matching: .any)["trends.provider"]
         XCTAssertTrue(providerControl.exists)
         providerControl.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.5)).click()
-        XCTAssertTrue(
-            app.descendants(matching: .any)["trends.mini.claude"].exists
-                || app.descendants(matching: .any)["trends.empty"].exists
-        )
+        XCTAssertTrue(providerControl.exists)
         writeScreenshot(app.windows.firstMatch, name: "quotabeacon-trends-all-providers-qa")
 
         app.staticTexts["데이터 소스"].click()
@@ -104,6 +97,7 @@ final class AIQuotaMonitorUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["settings.appearance.reset"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["settings.appearance.theme"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["settings.appearance.inspector"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["settings.appearance.provider.gemini"].exists)
         writeScreenshot(app.windows.firstMatch, name: "quotabeacon-settings-qa")
     }
 

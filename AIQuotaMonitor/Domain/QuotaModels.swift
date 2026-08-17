@@ -4,6 +4,7 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
     case claude
     case codex
     case grok
+    case gemini
     case zai
 
     var id: String { rawValue }
@@ -13,6 +14,7 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         case .claude: "Claude Code"
         case .codex: "Codex"
         case .grok: "Grok Build"
+        case .gemini: "Gemini · Antigravity"
         case .zai: "Z.ai GLM"
         }
     }

@@ -16,9 +16,11 @@ trap cleanup EXIT
 [[ -d "$APP" ]] || { print -u2 "Missing app: $APP (run Scripts/build_release.sh first)"; exit 1; }
 mkdir -p "$OUTPUT"
 mkdir -p "$FOLDER"
+mkdir -p "$FOLDER/BrandAssets"
 /usr/bin/ditto --norsrc --noextattr --noqtn "$APP" "$FOLDER/QuotaBeacon.app"
 /bin/cp "$ROOT/LICENSE" "$ROOT/THIRD_PARTY_NOTICES.md" "$ROOT/CHANGELOG.md" "$FOLDER/"
 /bin/cp "$ROOT/docs/security-privacy.md" "$ROOT/docs/distribution.md" "$FOLDER/"
+/bin/cp "$ROOT/BrandAssets/README.md" "$FOLDER/BrandAssets/README.md"
 /usr/bin/ditto -c -k --norsrc --noextattr --noqtn --keepParent "$FOLDER" "$ARCHIVE"
 /usr/bin/shasum -a 256 "$ARCHIVE" > "$ARCHIVE.sha256"
 print "$ARCHIVE"

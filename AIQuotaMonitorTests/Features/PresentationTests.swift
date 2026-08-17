@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 @testable import AIQuotaMonitor
 
@@ -77,7 +78,12 @@ final class PresentationTests: XCTestCase {
     }
 
     func testProviderMarksAreIndependentAndUnique() {
-        XCTAssertEqual(Set(ProviderID.allCases.map(\.beaconSymbol)).count, ProviderID.allCases.count)
+        XCTAssertEqual(Set(ProviderID.allCases.map(\.beaconAssetName)).count, ProviderID.allCases.count)
+        for provider in ProviderID.allCases {
+            XCTAssertNotNil(NSImage(named: provider.beaconAssetName))
+        }
+        XCTAssertNotNil(NSImage(named: AppTheme.headerAssetName))
+        XCTAssertNotNil(NSImage(named: AppTheme.statusItemAssetName))
     }
 
     func testUnavailableStatesHaveNoInventedWindows() async throws {

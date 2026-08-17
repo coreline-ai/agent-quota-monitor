@@ -94,13 +94,13 @@ struct MenuBarPlaceholderView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(palette.accent.gradient)
-                Image(systemName: AppTheme.statusItemSymbolName)
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 36, height: 36)
+            Image(AppTheme.headerAssetName)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .shadow(color: palette.accent.opacity(0.18), radius: 4, y: 1)
+                .frame(width: 36, height: 36)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("QuotaBeacon")
@@ -429,7 +429,9 @@ private struct ProviderLedgerRow: View {
             Text(QuotaPresentation.percentText(ratio))
                 .font(.caption2.monospacedDigit().weight(.semibold))
                 .foregroundStyle(color(for: urgency))
-                .frame(width: 30, alignment: .trailing)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(width: 38, alignment: .trailing)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(window.kind.label), \(metricMode.label) \(QuotaPresentation.percentText(ratio))")

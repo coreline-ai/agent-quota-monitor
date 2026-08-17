@@ -224,13 +224,13 @@ struct BeaconPalette {
 }
 
 extension ProviderID {
-    var beaconSymbol: String {
+    var beaconAssetName: String {
         switch self {
-        case .claude: "sparkles"
-        case .codex: "terminal.fill"
-        case .grok: "scope"
-        case .gemini: "diamond.fill"
-        case .zai: "waveform.path.ecg"
+        case .claude: "ProviderClaude"
+        case .codex: "ProviderCodex"
+        case .grok: "ProviderGrok"
+        case .gemini: "ProviderGemini"
+        case .zai: "ProviderZAI"
         }
     }
 

@@ -216,7 +216,7 @@ docs/                 # architecture, security, contracts, QA evidence
 
 ## 🌱 독립 구현
 
-QuotaBeacon은 Greenfield 방식으로 독립 구현되었습니다. 외부 오픈소스와 제품은 조사·비교 자료로만 사용했으며 해당 source, fixture, UI 구조, asset, build script를 포함하지 않습니다. `Scripts/audit_originality.sh`와 CI reference audit로 경계를 검사합니다.
+QuotaBeacon은 Greenfield 방식으로 독립 구현되었습니다. 외부 오픈소스와 제품의 source code, fixture, UI 구조, build script를 복사하지 않았으며 `Scripts/audit_originality.sh`와 CI reference audit로 경계를 검사합니다. Provider 식별용 소형 브랜드 마크만 출처·상표 경계를 명시해 포함하며 자세한 내용은 [브랜드 자산 출처](BrandAssets/README.md)를 확인하세요.
 
 ## 📄 라이선스
 

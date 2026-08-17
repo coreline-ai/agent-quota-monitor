@@ -7,6 +7,7 @@ enum AppTheme {
     static let danger = Color(red: 0.87, green: 0.24, blue: 0.31)
     static let panel = Color(nsColor: .controlBackgroundColor)
     static let statusItemAssetName = "QuotaBeaconStatus"
-    static let statusItemSymbolName = "chart.line.uptrend.xyaxis"
+    static let headerAssetName = "QuotaBeaconMark"
+    static let statusItemSymbolName = "dot.radiowaves.left.and.right"
     static let contentCornerRadius: CGFloat = 18
 }

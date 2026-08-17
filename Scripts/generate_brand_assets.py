@@ -1,131 +1,214 @@
 #!/usr/bin/env python3
-"""Generate the original QuotaBeacon app and menu-bar assets."""
+"""Generate QuotaBeacon and provider raster assets from pinned project sources."""
 
 from __future__ import annotations
 
 import json
-import math
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "AIQuotaMonitor" / "Resources" / "Assets.xcassets"
+SOURCES = ROOT / "BrandAssets" / "Sources"
 APP_ICON_SET = CATALOG / "AppIcon.appiconset"
 STATUS_SET = CATALOG / "QuotaBeaconStatus.imageset"
+HEADER_SET = CATALOG / "QuotaBeaconMark.imageset"
+
+PROVIDERS = {
+    "ProviderClaude": {
+        "source": "claude-mark-source.png",
+        "polarity": "dark",
+        "background": (206, 103, 76, 255),
+        "foreground": (255, 248, 241, 255),
+        "scale": 0.72,
+    },
+    "ProviderCodex": {
+        "source": "codex-openai-mark-source.png",
+        "polarity": "dark",
+        "background": (22, 25, 31, 255),
+        "foreground": (247, 249, 255, 255),
+        "scale": 0.68,
+    },
+    "ProviderGrok": {
+        "source": "grok-xai-mark-source.png",
+        "polarity": "light",
+        "background": (7, 9, 13, 255),
+        "foreground": (247, 248, 251, 255),
+        "scale": 0.78,
+    },
+    "ProviderGemini": {
+        "source": "gemini-mark-source.png",
+        "polarity": "dark",
+        "background": (18, 25, 52, 255),
+        "foreground": "gemini-gradient",
+        "scale": 0.68,
+    },
+    "ProviderZAI": {
+        "source": "zai-mark-source.png",
+        "polarity": "light",
+        "background": (9, 14, 20, 255),
+        "foreground": (247, 250, 252, 255),
+        "scale": 0.76,
+    },
+}
 
 
 def write_json(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
 
-def rounded_line(
-    draw: ImageDraw.ImageDraw,
-    points: list[tuple[float, float]],
-    fill: tuple[int, int, int, int],
-    width: int,
-) -> None:
-    draw.line(points, fill=fill, width=width, joint="curve")
-    radius = width // 2
-    for x, y in (points[0], points[-1]):
-        draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=fill)
+def center_square(image: Image.Image) -> Image.Image:
+    side = min(image.size)
+    left = (image.width - side) // 2
+    top = (image.height - side) // 2
+    return image.crop((left, top, left + side, top + side))
 
 
 def render_app_icon() -> Image.Image:
-    size = 1024
-    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    mask = Image.new("L", (size, size), 0)
-    ImageDraw.Draw(mask).rounded_rectangle((56, 56, 968, 968), radius=220, fill=255)
+    source = center_square(Image.open(SOURCES / "quotabeacon-generated-master.png").convert("RGBA"))
+    source = source.resize((1024, 1024), Image.Resampling.LANCZOS)
+    mask = Image.new("L", source.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((42, 42, 982, 982), radius=218, fill=255)
+    result = Image.new("RGBA", source.size, (0, 0, 0, 0))
+    result.paste(source, mask=mask)
+    return result
 
-    gradient = Image.new("RGBA", (size, size))
-    pixels = gradient.load()
+
+def mark_mask(path: Path, polarity: str, target_scale: float, size: int = 512) -> Image.Image:
+    source = center_square(Image.open(path).convert("RGBA"))
+    grayscale = source.convert("L")
+    mask = ImageChops.invert(grayscale) if polarity == "dark" else grayscale
+    mask = ImageChops.multiply(mask, source.getchannel("A"))
+    bounds = mask.getbbox()
+    if bounds is None:
+        raise ValueError(f"empty provider mark: {path}")
+    mark = mask.crop(bounds)
+    target = max(1, round(size * target_scale))
+    mark.thumbnail((target, target), Image.Resampling.LANCZOS)
+    result = Image.new("L", (size, size), 0)
+    result.paste(mark, ((size - mark.width) // 2, (size - mark.height) // 2))
+    return result
+
+
+def gradient(size: int, start: tuple[int, int, int], end: tuple[int, int, int]) -> Image.Image:
+    image = Image.new("RGBA", (size, size))
+    pixels = image.load()
     for y in range(size):
         for x in range(size):
-            t = (x * 0.42 + y * 0.58) / size
-            wave = 0.5 + 0.5 * math.sin((x - y) / 310)
-            pixels[x, y] = (
-                int(16 + 23 * t),
-                int(20 + 29 * t),
-                int(37 + 73 * t + 8 * wave),
-                255,
-            )
-    canvas.alpha_composite(Image.composite(gradient, Image.new("RGBA", (size, size)), mask))
+            amount = (x + y) / (2 * max(1, size - 1))
+            pixels[x, y] = tuple(
+                round(first + (second - first) * amount)
+                for first, second in zip(start, end)
+            ) + (255,)
+    return image
 
-    glow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    glow_draw = ImageDraw.Draw(glow)
-    glow_draw.ellipse((248, 210, 776, 738), fill=(73, 108, 255, 90))
-    glow = glow.filter(ImageFilter.GaussianBlur(92))
-    canvas.alpha_composite(Image.composite(glow, Image.new("RGBA", (size, size)), mask))
 
-    layer = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(layer)
-
-    # Two independent reset windows orbit a single live usage signal.
-    draw.arc((224, 196, 800, 772), 205, 339, fill=(121, 225, 255, 255), width=38)
-    draw.arc((286, 258, 738, 710), 24, 158, fill=(145, 136, 255, 255), width=30)
-    for x, y, color in (
-        (246, 604, (121, 225, 255, 255)),
-        (704, 384, (121, 225, 255, 255)),
-        (318, 381, (145, 136, 255, 255)),
-        (705, 590, (145, 136, 255, 255)),
-    ):
-        draw.ellipse((x - 19, y - 19, x + 19, y + 19), fill=color)
-
-    rounded_line(
-        draw,
-        [(314, 512), (411, 512), (463, 422), (527, 620), (584, 477), (710, 477)],
-        (248, 250, 255, 255),
-        34,
+def render_provider_badge(name: str, spec: dict, size: int = 512) -> Image.Image:
+    del name
+    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    shape = Image.new("L", (size, size), 0)
+    inset = round(size * 0.035)
+    radius = round(size * 0.25)
+    ImageDraw.Draw(shape).rounded_rectangle(
+        (inset, inset, size - inset, size - inset),
+        radius=radius,
+        fill=255,
     )
-    draw.ellipse((488, 473, 536, 521), fill=(255, 255, 255, 255))
+    background = Image.new("RGBA", (size, size), spec["background"])
+    canvas.paste(background, mask=shape)
 
-    # Quiet ledger baseline: enough to suggest history without becoming a chart logo.
-    rounded_line(draw, [(332, 746), (692, 746)], (207, 216, 255, 150), 16)
-    for x in (392, 512, 632):
-        draw.ellipse((x - 9, 737, x + 9, 755), fill=(207, 216, 255, 210))
+    mask = mark_mask(
+        SOURCES / spec["source"],
+        spec["polarity"],
+        spec["scale"],
+        size,
+    )
+    if spec["foreground"] == "gemini-gradient":
+        foreground = gradient(size, (79, 188, 255), (154, 105, 255))
+    else:
+        foreground = Image.new("RGBA", (size, size), spec["foreground"])
+    canvas.paste(foreground, mask=mask)
 
-    canvas.alpha_composite(layer)
-    highlight = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    ImageDraw.Draw(highlight).arc((82, 76, 942, 936), 205, 326, fill=(255, 255, 255, 40), width=8)
-    canvas.alpha_composite(Image.composite(highlight, Image.new("RGBA", (size, size)), mask))
-    return canvas
+    border = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    ImageDraw.Draw(border).rounded_rectangle(
+        (inset, inset, size - inset - 1, size - inset - 1),
+        radius=radius,
+        outline=(255, 255, 255, 38),
+        width=max(1, round(size * 0.012)),
+    )
+    return Image.alpha_composite(canvas, border)
 
 
 def render_status_mark(pixel_size: int) -> Image.Image:
-    scale = 8
+    scale = 10
     size = pixel_size * scale
-    layer = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(layer)
+    image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    ink = (0, 0, 0, 255)
     stroke = max(scale, round(size * 0.075))
-    inset = round(size * 0.13)
-    draw.arc((inset, inset, size - inset, size - inset), 200, 340, fill=(0, 0, 0, 255), width=stroke)
-    draw.arc(
-        (inset * 2, inset * 2, size - inset * 2, size - inset * 2),
-        20,
-        160,
-        fill=(0, 0, 0, 255),
-        width=stroke,
+
+    # Quota arc and reset ticks.
+    inset = round(size * 0.10)
+    draw.arc((inset, inset, size - inset, size - inset), 202, 338, fill=ink, width=stroke)
+    tick = round(size * 0.055)
+    for x, y in ((0.22, 0.39), (0.50, 0.16), (0.78, 0.39)):
+        px, py = round(size * x), round(size * y)
+        draw.rounded_rectangle((px - tick, py - tick, px + tick, py + tick), radius=tick, fill=ink)
+
+    # Harbor beacon with two compact light beams.
+    draw.polygon(
+        [(round(size * 0.25), round(size * 0.43)), (round(size * 0.43), round(size * 0.49)), (round(size * 0.43), round(size * 0.39))],
+        fill=ink,
     )
-    rounded_line(
-        draw,
-        [
-            (size * 0.22, size * 0.52),
-            (size * 0.39, size * 0.52),
-            (size * 0.48, size * 0.34),
-            (size * 0.58, size * 0.67),
-            (size * 0.69, size * 0.47),
-            (size * 0.80, size * 0.47),
-        ],
-        (0, 0, 0, 255),
-        stroke,
+    draw.polygon(
+        [(round(size * 0.75), round(size * 0.43)), (round(size * 0.57), round(size * 0.49)), (round(size * 0.57), round(size * 0.39))],
+        fill=ink,
     )
-    return layer.resize((pixel_size, pixel_size), Image.Resampling.LANCZOS)
+    draw.rounded_rectangle(
+        (round(size * 0.42), round(size * 0.36), round(size * 0.58), round(size * 0.52)),
+        radius=round(size * 0.025),
+        fill=ink,
+    )
+    draw.polygon(
+        [(round(size * 0.39), round(size * 0.36)), (round(size * 0.50), round(size * 0.28)), (round(size * 0.61), round(size * 0.36))],
+        fill=ink,
+    )
+    draw.polygon(
+        [(round(size * 0.42), round(size * 0.80)), (round(size * 0.58), round(size * 0.80)), (round(size * 0.55), round(size * 0.51)), (round(size * 0.45), round(size * 0.51))],
+        fill=ink,
+    )
+    draw.rounded_rectangle(
+        (round(size * 0.35), round(size * 0.78), round(size * 0.65), round(size * 0.88)),
+        radius=round(size * 0.025),
+        fill=ink,
+    )
+    return image.resize((pixel_size, pixel_size), Image.Resampling.LANCZOS)
+
+
+def write_imageset(name: str, base: Image.Image) -> None:
+    image_set = CATALOG / f"{name}.imageset"
+    image_set.mkdir(parents=True, exist_ok=True)
+    files = [(64, "1x", f"{name}.png"), (128, "2x", f"{name}@2x.png")]
+    for pixels, _, filename in files:
+        base.resize((pixels, pixels), Image.Resampling.LANCZOS).save(image_set / filename)
+    write_json(
+        image_set / "Contents.json",
+        {
+            "images": [
+                {"filename": filename, "idiom": "mac", "scale": scale}
+                for _, scale, filename in files
+            ],
+            "info": {"author": "xcode", "version": 1},
+        },
+    )
 
 
 def main() -> None:
     APP_ICON_SET.mkdir(parents=True, exist_ok=True)
     STATUS_SET.mkdir(parents=True, exist_ok=True)
+    HEADER_SET.mkdir(parents=True, exist_ok=True)
 
     base = render_app_icon()
     icon_specs = [
@@ -142,27 +225,30 @@ def main() -> None:
     ]
     for _, _, pixels, filename in icon_specs:
         base.resize((pixels, pixels), Image.Resampling.LANCZOS).save(APP_ICON_SET / filename)
-
     write_json(
         APP_ICON_SET / "Contents.json",
         {
             "images": [
-                {"filename": filename, "idiom": "mac", "scale": scale, "size": size}
-                for size, scale, _, filename in icon_specs
+                {"filename": filename, "idiom": "mac", "scale": scale, "size": logical_size}
+                for logical_size, scale, _, filename in icon_specs
             ],
             "info": {"author": "xcode", "version": 1},
         },
     )
 
-    status_specs = [(18, "1x", "QuotaBeaconStatus.png"), (36, "2x", "QuotaBeaconStatus@2x.png")]
-    for pixels, _, filename in status_specs:
+    write_imageset("QuotaBeaconMark", base)
+    for name, spec in PROVIDERS.items():
+        write_imageset(name, render_provider_badge(name, spec))
+
+    status_files = [(18, "1x", "QuotaBeaconStatus.png"), (36, "2x", "QuotaBeaconStatus@2x.png")]
+    for pixels, _, filename in status_files:
         render_status_mark(pixels).save(STATUS_SET / filename)
     write_json(
         STATUS_SET / "Contents.json",
         {
             "images": [
                 {"filename": filename, "idiom": "mac", "scale": scale}
-                for _, scale, filename in status_specs
+                for _, scale, filename in status_files
             ],
             "info": {"author": "xcode", "version": 1},
             "properties": {"template-rendering-intent": "template"},

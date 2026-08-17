@@ -1,0 +1,18 @@
+{
+  "images": [
+    {
+      "filename": "ProviderClaude.png",
+      "idiom": "mac",
+      "scale": "1x"
+    },
+    {
+      "filename": "ProviderClaude@2x.png",
+      "idiom": "mac",
+      "scale": "2x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

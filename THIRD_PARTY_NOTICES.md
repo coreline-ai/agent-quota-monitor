@@ -10,8 +10,16 @@ during development. Python and Pillow are development-time inputs to the
 original brand-asset generator and are not bundled in the application.
 
 External products listed in `docs/reference-register.md` were research and
-comparison references only. Their code, fixtures, assets, and build scripts are
-not included in QuotaBeacon.
+comparison references only. Their code, fixtures, and build scripts are not
+included in QuotaBeacon. Small provider identification marks are the sole asset
+exception and are documented in `BrandAssets/README.md`.
+
+Claude and Google Gemini source shapes used by the asset generator come from
+Simple Icons 16.21.0, which is distributed under CC0-1.0. The Codex/OpenAI,
+Grok/xAI, and GLM/Z.ai identification marks are derived from the respective
+official GitHub organization avatars. All product names and marks remain the
+property or trademarks of their respective owners. Their inclusion is solely
+for nominative identification and does not imply affiliation or endorsement.
 
 The optional Z.ai GLM integration executes the separately installed official
 `glm-plan-usage` Claude Code plugin (Apache-2.0) from the user's Claude plugin

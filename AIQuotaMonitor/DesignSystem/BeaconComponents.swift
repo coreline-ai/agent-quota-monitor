@@ -5,17 +5,14 @@ struct ProviderMark: View {
     var size: CGFloat = 30
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
-                .fill(provider.beaconTint.opacity(0.16))
-            RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
-                .strokeBorder(provider.beaconTint.opacity(0.30))
-            Image(systemName: provider.beaconSymbol)
-                .font(.system(size: size * 0.45, weight: .semibold))
-                .foregroundStyle(provider.beaconTint)
-        }
-        .frame(width: size, height: size)
-        .accessibilityHidden(true)
+        Image(provider.beaconAssetName)
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.27, style: .continuous))
+            .shadow(color: provider.beaconTint.opacity(0.18), radius: size * 0.10, y: 1)
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
     }
 }
 

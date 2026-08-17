@@ -1,10 +1,11 @@
 <p align="center">
-  <img src="AIQuotaMonitor/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-128@2x.png" width="112" alt="QuotaBeacon app icon">
+  <img src="AIQuotaMonitor/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-128@2x.png" width="112" alt="QuotaBeacon app icon"><br>
+  <img width="2752" height="1536" alt="AI_서비스별_사용량_관리_안내" src="https://github.com/user-attachments/assets/813a7c7d-11b7-4bd6-9c63-d83879494ab8" />
 </p>
 
 <h1 align="center">QuotaBeacon</h1>
 
-<p align="center">
+<p align="center"> 
   <strong>AI coding agent의 quota 신호를 한곳에서 읽는 macOS 메뉴 막대 앱</strong><br>
   Claude Code · Codex · Grok Build · Z.ai GLM의 구독 한도와 reset을 출처별로 분리해 보여줍니다.
 </p>

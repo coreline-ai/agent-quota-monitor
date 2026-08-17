@@ -30,7 +30,6 @@ final class AIQuotaMonitorUITests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 5))
-
         app.staticTexts["연결"].click()
         XCTAssertTrue(app.staticTexts["dashboard.connections.title"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["connections.apply"].exists)
@@ -57,6 +56,10 @@ final class AIQuotaMonitorUITests: XCTestCase {
         limitsScroll.swipeUp()
         writeScreenshot(app.windows.firstMatch, name: "quotabeacon-glm-live-qa")
         XCTAssertTrue(app.buttons["dashboard.refresh"].isHittable)
+
+        app.staticTexts["개요"].click()
+        XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 3))
+        writeScreenshot(app.windows.firstMatch, name: "quotabeacon-readme-overview")
 
         app.staticTexts["추세"].click()
         let trendsScroll = app.scrollViews["dashboard.trends"]

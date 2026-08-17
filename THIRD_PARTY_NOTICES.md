@@ -1,5 +1,8 @@
 # Third-Party Notices
 
+QuotaBeacon is Copyright (c) 2026 Coreline-ai and distributed under the MIT
+License. See `LICENSE` for the complete terms.
+
 QuotaBeacon 0.1.0 has no third-party runtime package dependencies.
 
 It links only Apple system frameworks supplied with macOS and uses XCTest only

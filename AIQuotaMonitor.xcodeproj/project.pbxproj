@@ -343,7 +343,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.hwanchoi.quotabeacon.tests";
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.coreline.quotabeacon.tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QuotaBeacon.app/Contents/MacOS/QuotaBeacon";
 			};
@@ -355,7 +355,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.hwanchoi.quotabeacon.tests";
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.coreline.quotabeacon.tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QuotaBeacon.app/Contents/MacOS/QuotaBeacon";
 			};
@@ -366,7 +366,7 @@
 			baseConfigurationReference = A10000000000000000000041 /* Debug.xcconfig */;
 			buildSettings = {
 				GENERATE_INFOPLIST_FILE = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.hwanchoi.quotabeacon.uitests";
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.coreline.quotabeacon.uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_TARGET_NAME = AIQuotaMonitor;
 			};
@@ -377,7 +377,7 @@
 			baseConfigurationReference = A10000000000000000000042 /* Release.xcconfig */;
 			buildSettings = {
 				GENERATE_INFOPLIST_FILE = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.hwanchoi.quotabeacon.uitests";
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.coreline.quotabeacon.uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_TARGET_NAME = AIQuotaMonitor;
 			};

@@ -114,7 +114,7 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Z.ai GLM Coding Plan의 quota와 
 |---|---|
 | 내부 module·scheme·target | `AIQuotaMonitor` |
 | 최종 표시 이름 | `QuotaBeacon` |
-| Bundle ID | `com.hwanchoi.quotabeacon` |
+| Bundle ID | `ai.coreline.quotabeacon` |
 | 최소 OS | macOS 14 |
 | 배포 | Developer ID 직접 배포 |
 | 디자인 언어 | `Signal Ledger` |

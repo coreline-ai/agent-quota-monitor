@@ -92,7 +92,7 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 | UI | SwiftUI | macOS 14와 접근성 지원 |
 | external package | 없음 | 최소 기반과 라이선스 단순화 |
 | 표시 이름 | `QuotaBeacon` | quota 상태를 조용히 알리는 메뉴바 beacon이라는 제품 역할 |
-| Bundle ID | `com.hwanchoi.quotabeacon` | 개인 배포용 권장 reverse-DNS identity |
+| Bundle ID | `ai.coreline.quotabeacon` | Coreline-ai reverse-DNS identity |
 | 디자인 언어 | `Signal Ledger` | quota·local usage를 분리한 계측 중심 표현 |
 | app/menu icon | 신규 생성 asset | 두 reset window와 하나의 live signal을 결합한 독립 형상 |
 | signing | 로컬 ad-hoc, 배포 Team ID는 Phase 7 주입 | credential을 저장소에 기록하지 않음 |

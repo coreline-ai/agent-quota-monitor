@@ -55,7 +55,7 @@ Codex, Claude Code, Grok Build, Z.ai GLM Coding Plan의 quota와 로컬 토큰 �
 
 - 내부 module·scheme·target 이름: `AIQuotaMonitor`
 - 앱 표시 이름: `QuotaBeacon`
-- Bundle ID: `com.hwanchoi.quotabeacon`
+- Bundle ID: `ai.coreline.quotabeacon`
 - 최소 OS: macOS 14
 - UI: SwiftUI
 - status item·popover·window 제어: AppKit

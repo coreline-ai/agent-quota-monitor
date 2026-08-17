@@ -25,7 +25,7 @@ from typing import Any
 
 
 REPORT_SCHEMA = 1
-DEFAULT_BUNDLE_ID = "com.hwanchoi.quotabeacon"
+DEFAULT_BUNDLE_ID = "ai.coreline.quotabeacon"
 SAFE_ENUM = re.compile(r"^[A-Za-z0-9_.+-]{1,64}$")
 PROVIDER_COMMANDS = {
     "codex": ("codex",),

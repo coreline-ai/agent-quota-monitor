@@ -4,7 +4,7 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var dashboardWindowController: DashboardWindowController?
     private var statusItemController: StatusItemController?
-    private let model = QuotaMonitorModel()
+    private lazy var model = QuotaMonitorModel()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let environment = ProcessInfo.processInfo.environment
@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // XCTest host alive after the assertions have completed.
         if isUnitTestHost { return }
 
+        LegacyPreferencesMigrator.migrateIfNeeded()
         let dashboardWindowController = DashboardWindowController(model: model)
         self.dashboardWindowController = dashboardWindowController
         statusItemController = StatusItemController(

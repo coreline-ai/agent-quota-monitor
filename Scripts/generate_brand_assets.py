@@ -86,7 +86,18 @@ def mark_mask(path: Path, polarity: str, target_scale: float, size: int = 512) -
         raise ValueError(f"empty provider mark: {path}")
     mark = mask.crop(bounds)
     target = max(1, round(size * target_scale))
-    mark.thumbnail((target, target), Image.Resampling.LANCZOS)
+    # `thumbnail` never enlarges a small source raster. Some official avatars
+    # are only 200 px, which made their mark look much smaller than the other
+    # provider marks after the 512 px badge was downsampled. Normalize the
+    # longest edge explicitly so every pinned source uses its requested scale.
+    factor = target / max(mark.width, mark.height)
+    mark = mark.resize(
+        (
+            max(1, round(mark.width * factor)),
+            max(1, round(mark.height * factor)),
+        ),
+        Image.Resampling.LANCZOS,
+    )
     result = Image.new("L", (size, size), 0)
     result.paste(mark, ((size - mark.width) // 2, (size - mark.height) // 2))
     return result

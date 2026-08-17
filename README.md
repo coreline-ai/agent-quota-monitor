@@ -5,9 +5,11 @@
 
 <h1 align="center">QuotaBeacon</h1>
 
-<p align="center"> 
-  <strong>AI coding agent의 quota 신호를 한곳에서 읽는 macOS 메뉴 막대 앱</strong><br>
-  Claude Code · Codex · Grok Build · Gemini · Z.ai GLM의 구독 한도와 reset을 출처별로 분리해 보여줍니다.
+<p align="center">
+  <strong>Claude Code · Codex · Grok · Gemini · Z.ai GLM의 quota와 reset을 한곳에서 확인하는 로컬 우선 macOS 메뉴 막대 앱</strong><br>
+  <em>A local-first macOS menu bar app for monitoring quota and reset windows across Claude Code, Codex, Grok, Gemini, and Z.ai GLM.</em><br>
+  Provider별 구독 한도, 출처, 관측 시각과 freshness를 분리해 안전하게 보여줍니다.<br>
+  Safely presents each provider's limits, provenance, observation time, and freshness without merging or estimating missing values.
 </p>
 
 <p align="center">

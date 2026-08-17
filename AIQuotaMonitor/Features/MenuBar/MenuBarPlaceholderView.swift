@@ -26,6 +26,7 @@ private enum MenuProviderScope: String, CaseIterable, Identifiable {
 
 private enum MenuBarLayout {
     static let providerIconSize: CGFloat = 30
+    static let claudeOpticalIconSize: CGFloat = 28
 }
 
 struct MenuBarPlaceholderView: View {
@@ -323,7 +324,7 @@ private struct ProviderLedgerRow: View {
             BeaconSurface(selected: isSelected, palette: palette) {
                 HStack(alignment: .top, spacing: 10) {
                     beaconRail
-                    ProviderMark(provider: snapshot.provider, size: MenuBarLayout.providerIconSize)
+                    ProviderMark(provider: snapshot.provider, size: providerIconContentSize)
                         .frame(
                             width: MenuBarLayout.providerIconSize,
                             height: MenuBarLayout.providerIconSize,
@@ -345,6 +346,12 @@ private struct ProviderLedgerRow: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(snapshot.provider.displayName), \(snapshot.state.label)")
         .accessibilityIdentifier("menu.provider.\(snapshot.provider.rawValue)")
+    }
+
+    private var providerIconContentSize: CGFloat {
+        snapshot.provider == .claude
+            ? MenuBarLayout.claudeOpticalIconSize
+            : MenuBarLayout.providerIconSize
     }
 
     private var beaconRail: some View {

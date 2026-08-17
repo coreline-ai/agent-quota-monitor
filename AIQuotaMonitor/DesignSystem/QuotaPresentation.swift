@@ -121,6 +121,14 @@ enum QuotaUrgency: Equatable {
 }
 
 enum QuotaPresentation {
+    static func summaryWindow(for snapshot: ProviderSnapshot) -> QuotaWindow? {
+        if snapshot.provider == .claude,
+           let fiveHour = snapshot.windows.first(where: { $0.kind == .fiveHour }) {
+            return fiveHour
+        }
+        return snapshot.windows.min { $0.remainingRatio < $1.remainingRatio }
+    }
+
     static func ratio(for window: QuotaWindow, mode: QuotaMetricMode) -> Double {
         switch mode {
         case .remaining: window.remainingRatio

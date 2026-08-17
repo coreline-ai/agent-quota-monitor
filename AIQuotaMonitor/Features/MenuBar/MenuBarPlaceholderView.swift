@@ -369,7 +369,7 @@ private struct ProviderLedgerRow: View {
                 .font(.caption)
                 .foregroundStyle(palette.secondaryText)
                 .frame(maxWidth: .infinity, alignment: .leading)
-        } else if density == .compact, let window = mostUrgentWindow {
+        } else if density == .compact, let window = QuotaPresentation.summaryWindow(for: snapshot) {
             BeaconQuotaBar(
                 window: window,
                 metricMode: metricMode,
@@ -436,10 +436,6 @@ private struct ProviderLedgerRow: View {
     private var resetSummary: String {
         let reset = snapshot.windows.compactMap(\.resetsAt).filter { $0 > Date() }.min()
         return QuotaPresentation.resetText(for: reset, style: resetStyle)
-    }
-
-    private var mostUrgentWindow: QuotaWindow? {
-        snapshot.windows.min { $0.remainingRatio < $1.remainingRatio }
     }
 
     private var emptyMessage: String {

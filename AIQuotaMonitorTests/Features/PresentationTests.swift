@@ -31,6 +31,37 @@ final class PresentationTests: XCTestCase {
         XCTAssertEqual(QuotaPresentation.urgency(forRemaining: 1), .healthy)
     }
 
+    func testClaudeCompactSummaryPrefersFiveHourOverScopedWeeklyWindow() throws {
+        let provenance = ValueProvenance(
+            source: .syntheticFixture,
+            contract: .observed,
+            observedAt: Date(timeIntervalSince1970: 0),
+            freshness: .live
+        )
+        let fiveHour = QuotaWindow(
+            kind: .fiveHour,
+            usedRatio: try QuotaRatio(0.05),
+            resetsAt: nil,
+            provenance: provenance
+        )
+        let fable = QuotaWindow(
+            kind: .custom("Fable 주간"),
+            usedRatio: try QuotaRatio(0.96),
+            resetsAt: nil,
+            provenance: provenance
+        )
+        let snapshot = ProviderSnapshot(
+            provider: .claude,
+            state: .available,
+            windows: [fiveHour, fable],
+            credits: nil,
+            lastAttempt: nil,
+            lastSuccessAt: nil
+        )
+
+        XCTAssertEqual(QuotaPresentation.summaryWindow(for: snapshot)?.kind, .fiveHour)
+    }
+
     func testResetPresentationHandlesRelativeUnknownAndPastDates() {
         let now = Date(timeIntervalSince1970: 1_000_000)
         XCTAssertEqual(

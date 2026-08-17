@@ -208,6 +208,7 @@ docs/                 # architecture, security, contracts, QA evidence
 - [배포 가이드](docs/distribution.md)
 - [외부 참조 등록부](docs/reference-register.md)
 - [정본 개발 계획](dev-plan/implement_20260816_133341.md)
+- [Grok 계약·Gemini CLI 확장 계획](dev-plan/implement_20260817_155407.md)
 
 ## 🌱 독립 구현
 

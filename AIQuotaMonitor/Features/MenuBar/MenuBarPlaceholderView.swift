@@ -24,6 +24,10 @@ private enum MenuProviderScope: String, CaseIterable, Identifiable {
     }
 }
 
+private enum MenuBarLayout {
+    static let providerIconSize: CGFloat = 30
+}
+
 struct MenuBarPlaceholderView: View {
     @ObservedObject var model: QuotaMonitorModel
     let onShowDashboard: () -> Void
@@ -319,7 +323,12 @@ private struct ProviderLedgerRow: View {
             BeaconSurface(selected: isSelected, palette: palette) {
                 HStack(alignment: .top, spacing: 10) {
                     beaconRail
-                    ProviderMark(provider: snapshot.provider, size: density == .compact ? 27 : 31)
+                    ProviderMark(provider: snapshot.provider, size: MenuBarLayout.providerIconSize)
+                        .frame(
+                            width: MenuBarLayout.providerIconSize,
+                            height: MenuBarLayout.providerIconSize,
+                            alignment: .center
+                        )
                     VStack(alignment: .leading, spacing: density == .compact ? 6 : 9) {
                         providerHeader
                         quotaSummary

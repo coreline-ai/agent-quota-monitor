@@ -59,6 +59,7 @@ flowchart LR
 - quota chart와 local token/cost chart를 분리한 5-section Signal Ledger dashboard
 - `TrendPresentation`의 기간 filter·Provider/window/reset grouping·freshness segment·bucket downsample과 Swift Charts `Reset Bands` 선 그래프
 - 공통 `QuotaPresentation`·`BeaconComponents`를 사용하는 Beacon Ledger popover와 한도 원장
+- 상태바 하단의 `전체 보기` CTA와 기존 dashboard 개요의 3+2 Provider grid
 - AppStorage 기반 밀도·metric·reset·theme·inspector·Provider 표시 설정
 - redacted JSON/CSV export, notification threshold dedupe, SMAppService login item
 - 한국어 기본 UI와 영어 resource fallback
@@ -107,6 +108,13 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 4. `SnapshotStore`가 부분 결과를 last-known-good와 병합하되 이전 값은 `stale`로 바꾼다.
 5. menu/dashboard는 `ProviderSnapshot`만 소비하며 credential path나 원본 payload를 보지 않는다.
 6. popover가 보이면 60초, 일반 상태 5분, 실패 시 15/60분 backoff를 적용한다.
+
+## 전체 보기 UI 흐름
+
+1. 상태바 popover footer는 scroll content 밖에 고정되며, `전체 보기` CTA는 Provider 목록을 얼마나 스크롤했는지와 무관하게 사용할 수 있다.
+2. `PopoverController`가 popover를 먼저 닫고 `DashboardWindowController.showAllProviders()`를 다음 main run-loop에서 호출한다.
+3. 기존 dashboard window/controller를 재사용하고, 이미 열렸거나 최소화된 창은 복원한다. 일반 `대시보드 열기`는 기존 section을 보존하지만 `전체 보기`는 항상 `개요`로 시작한다.
+4. 개요는 공유 `ProviderSnapshot`을 `OverviewProviderCard`로 전달해 Claude·Codex·Grok·Gemini·GLM을 3+2 grid로 표시한다. 이 경로는 새 Provider 요청·credential 접근·중복 refresh를 만들지 않는다.
 
 ## Codex 자동 연결 흐름
 

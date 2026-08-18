@@ -3,6 +3,7 @@
 "menu.title" = "AI 사용량";
 "menu.placeholderMessage" = "데이터 계층이 준비되면 Provider 연결 상태와 quota가 여기에 표시됩니다.";
 "menu.openDashboard" = "대시보드 열기";
+"menu.openAllProviders" = "전체 보기";
 "menu.refresh" = "새로고침";
 "menu.quit" = "QuotaBeacon 종료";
 "dashboard.windowTitle" = "QuotaBeacon";

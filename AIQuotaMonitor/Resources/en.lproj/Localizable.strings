@@ -3,6 +3,7 @@
 "menu.title" = "AI quota";
 "menu.placeholderMessage" = "Provider connections and quota windows will appear here after the data layer is ready.";
 "menu.openDashboard" = "Open Dashboard";
+"menu.openAllProviders" = "View All Providers";
 "menu.refresh" = "Refresh";
 "menu.quit" = "Quit QuotaBeacon";
 "dashboard.windowTitle" = "QuotaBeacon";

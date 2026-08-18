@@ -135,7 +135,7 @@ Scripts/package_release.sh
 
 ## 🔌 Provider 연결
 
-1. 메뉴 막대의 QuotaBeacon을 열고 **대시보드 열기**를 누릅니다.
+1. 메뉴 막대의 QuotaBeacon을 열고 하단의 **전체 보기**를 누릅니다. 여러 Provider를 한 화면에서 비교하려면 이 버튼을 사용합니다.
 2. 왼쪽 사이드바의 **연결** 또는 **Provider 연결**을 선택합니다.
 3. 자동 탐지된 경로와 상태를 확인합니다. Codex는 저장된 경로 → GUI PATH → 사용자 로컬/Homebrew·MacPorts → NVM/fnm/Volta/mise/asdf → Codex·ChatGPT 앱 번들 순으로 확인하며 shell profile은 실행하지 않습니다.
 4. 사용할 Provider toggle을 켜고 **읽기 전용 연결 적용**을 누릅니다.

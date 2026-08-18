@@ -6,7 +6,7 @@ final class PopoverController: NSObject, NSPopoverDelegate {
     private let popover: NSPopover
     private let model: QuotaMonitorModel
 
-    init(model: QuotaMonitorModel, onShowDashboard: @escaping () -> Void) {
+    init(model: QuotaMonitorModel, onShowAllProviders: @escaping () -> Void) {
         self.model = model
         popover = NSPopover()
         super.init()
@@ -14,7 +14,12 @@ final class PopoverController: NSObject, NSPopoverDelegate {
         popover.animates = true
         popover.contentSize = NSSize(width: 430, height: 560)
         popover.contentViewController = NSHostingController(
-            rootView: MenuBarPlaceholderView(model: model, onShowDashboard: onShowDashboard)
+            rootView: MenuBarPlaceholderView(
+                model: model,
+                onShowAllProviders: { [weak self] in
+                    self?.showAllProviders(onShowAllProviders)
+                }
+            )
         )
         popover.delegate = self
     }
@@ -30,6 +35,13 @@ final class PopoverController: NSObject, NSPopoverDelegate {
     func show(relativeTo positioningRect: NSRect, of positioningView: NSView) {
         guard !popover.isShown else { return }
         popover.show(relativeTo: positioningRect, of: positioningView, preferredEdge: .minY)
+    }
+
+    private func showAllProviders(_ action: @escaping () -> Void) {
+        popover.performClose(nil)
+        DispatchQueue.main.async {
+            action()
+        }
     }
 
     func popoverDidShow(_ notification: Notification) {

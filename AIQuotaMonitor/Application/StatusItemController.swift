@@ -8,12 +8,17 @@ final class StatusItemController: NSObject {
     private let onQuit: () -> Void
     private let model: QuotaMonitorModel
 
-    init(model: QuotaMonitorModel, onShowDashboard: @escaping () -> Void, onQuit: @escaping () -> Void) {
+    init(
+        model: QuotaMonitorModel,
+        onShowDashboard: @escaping () -> Void,
+        onShowAllProviders: @escaping () -> Void,
+        onQuit: @escaping () -> Void
+    ) {
         self.model = model
         self.onShowDashboard = onShowDashboard
         self.onQuit = onQuit
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        popoverController = PopoverController(model: model, onShowDashboard: onShowDashboard)
+        popoverController = PopoverController(model: model, onShowAllProviders: onShowAllProviders)
         super.init()
         configureStatusButton()
     }

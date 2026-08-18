@@ -3,6 +3,7 @@ import SwiftUI
 @MainActor
 final class DashboardChromeModel: ObservableObject {
     @Published var isSidebarVisible = true
+    @Published var selection = DashboardSection.overview
 
     func toggleSidebar() {
         isSidebarVisible.toggle()
@@ -45,7 +46,6 @@ struct DashboardRootView: View {
     @ObservedObject var chrome: DashboardChromeModel
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage(QuotaPreferenceKey.theme) private var theme = QuotaVisualTheme.system
-    @State private var selection = DashboardSection.overview
 
     private var palette: BeaconPalette {
         BeaconPalette.resolve(theme: theme, colorScheme: colorScheme)
@@ -68,7 +68,7 @@ struct DashboardRootView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            List(DashboardSection.allCases, selection: $selection) { section in
+            List(DashboardSection.allCases, selection: $chrome.selection) { section in
                 DashboardSidebarLabel(title: section.label, symbol: section.symbol)
                     .tag(section)
             }
@@ -77,7 +77,7 @@ struct DashboardRootView: View {
 
             VStack(spacing: 8) {
                 Button {
-                    selection = .connections
+                    chrome.selection = .connections
                 } label: {
                     DashboardSidebarLabel(title: "Provider 연결", symbol: "link.badge.plus")
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -102,7 +102,7 @@ struct DashboardRootView: View {
     private var detailColumn: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                Text(selection.label)
+                Text(chrome.selection.label)
                     .font(.headline)
                 Spacer()
             }
@@ -131,14 +131,14 @@ struct DashboardRootView: View {
 
     @ViewBuilder
     private var detail: some View {
-        switch selection {
+        switch chrome.selection {
         case .overview: OverviewView(model: model)
         case .connections: ProviderConnectionsView(model: model)
         case .limits: LimitsView(snapshots: model.snapshots)
         case .trends:
             TrendsView(
                 snapshots: model.history.isEmpty ? model.snapshots : model.history,
-                onShowDataSources: { selection = .dataSources }
+                onShowDataSources: { chrome.selection = .dataSources }
             )
         case .dataSources: DataSourcesView(snapshots: model.snapshots)
         case .settings: DashboardSettingsView(model: model)
@@ -168,16 +168,25 @@ private struct DashboardSidebarLabel: View {
 
 struct OverviewView: View {
     @ObservedObject var model: QuotaMonitorModel
+    @Environment(\.colorScheme) private var colorScheme
+    @AppStorage(QuotaPreferenceKey.metricMode) private var metricMode = QuotaMetricMode.remaining
+    @AppStorage(QuotaPreferenceKey.resetStyle) private var resetStyle = QuotaResetStyle.relative
+    @AppStorage(QuotaPreferenceKey.theme) private var theme = QuotaVisualTheme.system
+
+    private var palette: BeaconPalette {
+        BeaconPalette.resolve(theme: theme, colorScheme: colorScheme)
+    }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Signal Ledger").font(.caption.weight(.bold)).foregroundStyle(AppTheme.accentColor)
                     Text("AI quota 현황")
-                        .font(.system(.largeTitle, design: .rounded, weight: .semibold))
+                        .font(.system(.title2, design: .rounded, weight: .semibold))
                         .accessibilityIdentifier("dashboard.overview.title")
                     Text("구독 한도와 로컬 사용량을 섞지 않고 출처별로 보여줍니다.")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 HStack(spacing: 12) {
@@ -186,32 +195,52 @@ struct OverviewView: View {
                     metric("오류", value: "\(model.errorCount)", symbol: "exclamationmark.triangle")
                 }
 
-                SignalPanel(title: "Provider 신호") {
-                    VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("모든 Provider")
+                        .font(.headline)
+                        .accessibilityIdentifier("overview.provider.grid.title")
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3),
+                        spacing: 12
+                    ) {
                         ForEach(model.snapshots) { snapshot in
-                            HStack(spacing: 12) {
-                                Circle().fill(snapshot.state.tint).frame(width: 8, height: 8)
-                                Text(snapshot.provider.displayName).fontWeight(.medium)
-                                Spacer()
-                                ProviderStateBadge(state: snapshot.state)
-                            }
-                            .padding(.vertical, 10)
-                            if snapshot.provider != model.snapshots.last?.provider { Divider() }
+                            OverviewProviderCard(
+                                snapshot: snapshot,
+                                metricMode: metricMode,
+                                resetStyle: resetStyle,
+                                palette: palette
+                            )
                         }
                     }
                 }
+                .accessibilityIdentifier("overview.provider.grid")
             }
-            .padding(28)
+            .padding(18)
         }
     }
 
     private func metric(_ title: String, value: String, symbol: String) -> some View {
-        SignalPanel(title: title) {
-            HStack {
-                Text(value).font(.system(size: 28, weight: .semibold, design: .rounded))
-                Spacer()
-                Image(systemName: symbol).foregroundStyle(AppTheme.accentColor)
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(palette.secondaryText)
+                Text(value)
+                    .font(.system(.title3, design: .rounded, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
+            Spacer(minLength: 4)
+            Image(systemName: symbol)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(palette.accent)
+        }
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+        .background(palette.elevatedSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(palette.border)
         }
     }
 

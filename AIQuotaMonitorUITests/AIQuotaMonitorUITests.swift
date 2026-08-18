@@ -21,6 +21,12 @@ final class AIQuotaMonitorUITests: XCTestCase {
         let detailScreenshot = popover.screenshot()
         XCTAssertNotEqual(summaryScreenshot.pngRepresentation, detailScreenshot.pngRepresentation)
         addScreenshot(detailScreenshot, name: "quotabeacon-menu-ledger-detail-qa")
+
+        let allProvidersButton = app.buttons["menu.openDashboard"]
+        XCTAssertTrue(allProvidersButton.waitForExistence(timeout: 3))
+        allProvidersButton.click()
+        XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 3))
+        assertAllProviderCards(in: app)
     }
 
     func testDashboardCanOpenForUITesting() {
@@ -29,6 +35,7 @@ final class AIQuotaMonitorUITests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 5))
+        assertAllProviderCards(in: app)
         app.staticTexts["연결"].click()
         XCTAssertTrue(app.staticTexts["dashboard.connections.title"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["connections.apply"].exists)
@@ -131,6 +138,16 @@ final class AIQuotaMonitorUITests: XCTestCase {
 
     private func writeScreenshot(_ element: XCUIElement, name: String) {
         addScreenshot(element.screenshot(), name: name)
+    }
+
+    private func assertAllProviderCards(in app: XCUIApplication) {
+        for provider in ["claude", "codex", "grok", "gemini", "zai"] {
+            XCTAssertTrue(
+                app.descendants(matching: .any)["overview.provider.\(provider)"]
+                    .waitForExistence(timeout: 3),
+                "missing overview card for \(provider)"
+            )
+        }
     }
 
     private func addScreenshot(_ screenshot: XCUIScreenshot, name: String) {

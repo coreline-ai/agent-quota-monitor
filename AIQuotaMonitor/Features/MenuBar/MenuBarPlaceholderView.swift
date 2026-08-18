@@ -31,7 +31,7 @@ private enum MenuBarLayout {
 
 struct MenuBarPlaceholderView: View {
     @ObservedObject var model: QuotaMonitorModel
-    let onShowDashboard: () -> Void
+    let onShowAllProviders: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -84,8 +84,10 @@ struct MenuBarPlaceholderView: View {
                     }
                     .padding(.vertical, 1)
                 }
+                .frame(maxHeight: .infinity)
             }
 
+            Divider()
             footer
         }
         .padding(14)
@@ -188,17 +190,21 @@ struct MenuBarPlaceholderView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             Label("\(metricMode.label) 표시 · 위험은 잔여 기준", systemImage: "circle.lefthalf.filled")
                 .font(.caption2)
                 .foregroundStyle(palette.secondaryText)
                 .lineLimit(1)
                 .layoutPriority(1)
-            Spacer()
-            Button("대시보드 열기", action: onShowDashboard)
+            Button(action: onShowAllProviders) {
+                Label(String(localized: "menu.openAllProviders"), systemImage: "rectangle.grid.2x2")
+                    .frame(maxWidth: .infinity)
+            }
                 .buttonStyle(.borderedProminent)
                 .tint(palette.accent)
-                .fixedSize()
+                .frame(maxWidth: .infinity)
+                .controlSize(.large)
+                .help(String(localized: "menu.openAllProviders"))
                 .accessibilityIdentifier("menu.openDashboard")
         }
         .padding(.top, 2)

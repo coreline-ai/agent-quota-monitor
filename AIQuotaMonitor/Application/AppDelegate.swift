@@ -25,6 +25,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onShowDashboard: { [weak dashboardWindowController] in
                 dashboardWindowController?.showWindow()
             },
+            onShowAllProviders: { [weak dashboardWindowController] in
+                dashboardWindowController?.showAllProviders()
+            },
             onQuit: {
                 NSApplication.shared.terminate(nil)
             }

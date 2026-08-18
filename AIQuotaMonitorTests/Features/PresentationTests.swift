@@ -3,6 +3,16 @@ import XCTest
 @testable import AIQuotaMonitor
 
 final class PresentationTests: XCTestCase {
+    @MainActor
+    func testDashboardChromeCanResetOverviewSelectionForAllProviders() {
+        let chrome = DashboardChromeModel()
+        chrome.selection = .trends
+
+        chrome.selection = .overview
+
+        XCTAssertEqual(chrome.selection, .overview)
+    }
+
     func testQuotaPresentationSupportsRemainingAndUsedMetrics() throws {
         let window = QuotaWindow(
             kind: .fiveHour,

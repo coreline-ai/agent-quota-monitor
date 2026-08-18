@@ -32,8 +32,16 @@ final class DashboardWindowController: NSWindowController, NSToolbarDelegate {
 
     func showWindow() {
         showWindow(nil)
+        if window?.isMiniaturized == true {
+            window?.deminiaturize(nil)
+        }
         window?.makeKeyAndOrderFront(nil)
         NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+
+    func showAllProviders() {
+        chrome.selection = .overview
+        showWindow()
     }
 
     private func installToolbar(in window: NSWindow) {

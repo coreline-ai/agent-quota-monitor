@@ -288,30 +288,8 @@ enum ProviderConnectionDefaults {
     }
 
     static func codexExecutablePath(fileManager: FileManager = .default) -> String {
-        let home = fileManager.homeDirectoryForCurrentUser
-        let fixedCandidates = [
-            home.appending(path: ".local/bin/codex").path,
-            home.appending(path: ".codex/bin/codex").path,
-            "/opt/homebrew/bin/codex",
-            "/usr/local/bin/codex",
-        ]
-        if let match = fixedCandidates.first(where: fileManager.isExecutableFile(atPath:)) {
-            return match
-        }
-
-        let versionsRoot = home.appending(path: ".nvm/versions/node")
-        let versions = (try? fileManager.contentsOfDirectory(
-            at: versionsRoot,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        )) ?? []
-        for version in versions.sorted(by: {
-            $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedDescending
-        }) {
-            let candidate = version.appending(path: "bin/codex").path
-            if fileManager.isExecutableFile(atPath: candidate) { return candidate }
-        }
-        return "/opt/homebrew/bin/codex"
+        CodexRuntimeLocator(fileManager: fileManager).locate()?.executableURL.path
+            ?? "/opt/homebrew/bin/codex"
     }
 
     static func geminiExecutablePath(fileManager: FileManager = .default) -> String {

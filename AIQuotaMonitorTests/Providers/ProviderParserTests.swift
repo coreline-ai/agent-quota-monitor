@@ -177,6 +177,42 @@ final class ProviderParserTests: XCTestCase {
         try? FileManager.default.removeItem(at: directory)
     }
 
+    func testCodexAutoProviderFallsBackToNextResolvedRuntime() async throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let first = directory.appending(path: "first-codex")
+        try Data("""
+        #!/bin/sh
+        IFS= read -r first
+        IFS= read -r second
+        printf '%s\\n' '{"id":2,"error":{"code":401,"message":"expired"}}'
+        sleep 30
+        """.utf8).write(to: first)
+        XCTAssertEqual(chmod(first.path, 0o700), 0)
+
+        let second = directory.appending(path: "second-codex")
+        try Data("""
+        #!/bin/sh
+        IFS= read -r first
+        IFS= read -r second
+        printf '%s\\n' '{"id":2,"result":{"rateLimits":{"primary":{"usedPercent":18,"resetsAt":1786878000,"windowDurationMins":300}}}}'
+        sleep 30
+        """.utf8).write(to: second)
+        XCTAssertEqual(chmod(second.path, 0o700), 0)
+
+        let provider = CodexAutoProvider(runtimes: [
+            CodexRuntime(executableURL: first, runtimeURL: nil, source: .explicit),
+            CodexRuntime(executableURL: second, runtimeURL: nil, source: .applicationBundle)
+        ])
+
+        let result = await provider.fetchQuota()
+
+        XCTAssertEqual(result.snapshot.state, .partial)
+        XCTAssertEqual(result.snapshot.windows.first?.usedRatio.value ?? -1, 0.18, accuracy: 0.0001)
+    }
+
     private func fixture(_ provider: String, _ name: String) throws -> Data {
         let resource = "\(provider.lowercased())-\(name)"
         guard let url = Bundle(for: Self.self).url(forResource: resource, withExtension: "json") else {

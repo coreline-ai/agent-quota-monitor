@@ -6,7 +6,7 @@
 
 - QuotaBeacon은 자체 서버와 telemetry를 사용하지 않는다.
 - Claude는 사용자가 연결을 승인한 경우 `Claude Code-credentials` Keychain 항목의 access token만 메모리에서 선택하고 Anthropic OAuth usage HTTPS GET에 사용한다. refresh token은 읽거나 전송하지 않는다.
-- Codex는 사용자가 활성화한 경우 공식 `codex app-server`의 `initialize`, `account/rateLimits/read`만 호출한다.
+- Codex는 사용자가 활성화한 경우 shell profile이나 credential file을 읽지 않고, `CodexRuntimeLocator`가 찾은 executable로 공식 `codex app-server`의 `initialize`, `account/rateLimits/read`만 호출한다. 기존 저장 경로가 실패하면 제한된 로컬 설치 후보를 직렬 시도하며 OAuth refresh·login/logout·모델/thread 호출은 하지 않는다.
 - Grok은 사용자가 opt-in한 경우에만 검증된 `grok login` auth file에서 access token과 user ID를 메모리로 선택하고 xAI 공식 CLI billing backend의 단일 HTTPS GET을 호출한다. refresh token은 선택·사용·전송하지 않는다.
 - Gemini는 사용자가 opt-in한 경우 공식 Antigravity CLI process에 `/usage`만 전송한다. QuotaBeacon은 Gemini/Antigravity token·account DB·cookie·OAuth credential 또는 Code Assist endpoint를 직접 읽거나 호출하지 않는다.
 - Z.ai는 사용자가 opt-in한 경우 기존 `claude-glm` alias와 설치된 공식 `glm-plan-usage` plugin만 사용한다. shell profile을 실행하지 않고 ZAI base URL과 auth token 두 값만 메모리에서 선택해 공식 plugin process에 전달한다.

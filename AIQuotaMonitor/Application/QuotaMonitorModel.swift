@@ -176,7 +176,8 @@ final class QuotaMonitorModel: ObservableObject {
             : defaults.bool(forKey: "claude.snapshotEnabled")
         return providers(
             codexEnabled: defaults.bool(forKey: "codex.readOnlyEnabled"),
-            codexExecutablePath: defaults.string(forKey: "codex.executablePath") ?? "/opt/homebrew/bin/codex",
+            codexExecutablePath: defaults.string(forKey: "codex.executablePath")
+                ?? ProviderConnectionDefaults.codexExecutablePath(),
             claudeEnabled: claudeEnabled,
             grokEnabled: defaults.bool(forKey: "grok.readOnlyEnabled"),
             grokAuthPath: defaults.string(forKey: "grok.authPath")
@@ -215,7 +216,9 @@ final class QuotaMonitorModel: ObservableObject {
 
         let codex: any QuotaProvider
         if codexEnabled, !codexExecutablePath.isEmpty {
-            codex = CodexAppServerProvider(executableURL: URL(fileURLWithPath: codexExecutablePath))
+            let executableURL = URL(fileURLWithPath: codexExecutablePath).standardizedFileURL
+            let runtimes = CodexRuntimeLocator().locateAll(explicitURL: executableURL)
+            codex = CodexAutoProvider(runtimes: runtimes)
         } else {
             codex = StateOnlyProvider(id: .codex, state: .notConfigured)
         }

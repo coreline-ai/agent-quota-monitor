@@ -54,6 +54,7 @@ flowchart LR
 - cancellation/timeout HTTP·Process 경계와 read-only credential validator/Keychain
 - versioned JSON history, 90일·25 MiB retention, Provider별 single-flight refresh
 - Claude Keychain OAuth usage GET adapter와 선택적 statusLine snapshot parser, Codex 공식 app-server read-only adapter
+- `CodexRuntimeLocator`가 저장 경로·GUI PATH·사용자 로컬·Node manager·Codex/ChatGPT 앱 번들 후보를 shell profile 없이 결정론적으로 탐색하고, `CodexAutoProvider`가 후보별 app-server를 직렬 시도
 - Grok 공식 CLI billing backend, Antigravity CLI Gemini `/usage`, Z.ai 공식 `glm-plan-usage` plugin 기반 `observed · Beta` adapter, 다섯 Provider 독립 synthetic parser fixture
 - quota chart와 local token/cost chart를 분리한 5-section Signal Ledger dashboard
 - `TrendPresentation`의 기간 filter·Provider/window/reset grouping·freshness segment·bucket downsample과 Swift Charts `Reset Bands` 선 그래프
@@ -101,11 +102,19 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 ## 런타임 흐름
 
 1. `AppDelegate`가 shared `QuotaMonitorModel`과 status/dashboard controller를 조립한다.
-2. `QuotaMonitorModel`은 저장된 opt-in 설정만으로 Provider adapter를 만든다. Claude/Grok이 비활성화된 경우 Keychain/auth file 접근이나 network request는 발생하지 않는다.
+2. `QuotaMonitorModel`은 저장된 opt-in 설정만으로 Provider adapter를 만든다. Claude/Grok이 비활성화된 경우 Keychain/auth file 접근이나 network request는 발생하지 않는다. Codex는 opt-in 상태에서만 locator가 executable metadata를 확인하고 app-server provider를 조립한다.
 3. `RefreshCoordinator`가 Provider별 single-flight task를 실행하고 한 Provider 실패를 격리한다.
 4. `SnapshotStore`가 부분 결과를 last-known-good와 병합하되 이전 값은 `stale`로 바꾼다.
 5. menu/dashboard는 `ProviderSnapshot`만 소비하며 credential path나 원본 payload를 보지 않는다.
 6. popover가 보이면 60초, 일반 상태 5분, 실패 시 15/60분 backoff를 적용한다.
+
+## Codex 자동 연결 흐름
+
+1. 기존 `codex.executablePath`가 있으면 explicit 후보로 먼저 유지하고, 이어 GUI에서 상속된 PATH를 확인한다.
+2. PATH가 비어 있거나 오래된 경우 `~/.local`, `~/.codex`, Homebrew/MacPorts, NVM/fnm/Volta/mise/asdf의 제한된 root와 Codex/ChatGPT 앱 번들을 순서대로 확인한다. shell profile, `eval`, login shell은 실행하지 않는다.
+3. 후보는 regular executable만 사용하고 중복 경로를 제거한다. Node shebang(`#!/usr/bin/env node`)은 후보 인접 경로와 안전한 manager/PATH 후보에서 실제 runtime을 찾아 app-server의 PATH에만 추가한다.
+4. `CodexAutoProvider`는 후보를 결정론적으로 직렬 시도하며 `initialize`와 `account/rateLimits/read`만 호출한다. 하나가 정상/부분 응답을 반환하면 즉시 중단하고, 실패한 stale 경로는 다음 후보를 막지 않는다.
+5. OAuth·CLI status fallback은 read-only 계약과 무기록 실행을 별도 증명하기 전에는 활성화하지 않는다. 모든 후보가 실패하면 기존 typed failure과 last-known-good/stale 병합 규칙을 그대로 사용한다.
 
 ## 추세 표시 흐름
 

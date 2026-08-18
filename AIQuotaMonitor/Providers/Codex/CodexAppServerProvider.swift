@@ -3,10 +3,16 @@ import Foundation
 struct CodexAppServerProvider: QuotaProvider {
     let id = ProviderID.codex
     let executableURL: URL
+    let runtime: CodexRuntime?
     let runner: ProcessRunner
 
-    init(executableURL: URL, runner: ProcessRunner = ProcessRunner()) {
+    init(
+        executableURL: URL,
+        runtime: CodexRuntime? = nil,
+        runner: ProcessRunner = ProcessRunner()
+    ) {
         self.executableURL = executableURL
+        self.runtime = runtime
         self.runner = runner
     }
 
@@ -84,9 +90,12 @@ struct CodexAppServerProvider: QuotaProvider {
         let executableDirectory = executableURL.deletingLastPathComponent().standardizedFileURL.path
         let inheritedPath = value["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
         let pathEntries = inheritedPath.split(separator: ":").map(String.init)
-        if !pathEntries.contains(executableDirectory) {
-            value["PATH"] = ([executableDirectory] + pathEntries).joined(separator: ":")
+        let runtimeDirectory = runtime?.runtimeURL?.deletingLastPathComponent().standardizedFileURL.path
+        var enrichedPath = pathEntries
+        for entry in [executableDirectory, runtimeDirectory].compactMap({ $0 }) where !enrichedPath.contains(entry) {
+            enrichedPath.insert(entry, at: 0)
         }
+        value["PATH"] = enrichedPath.joined(separator: ":")
         value["CODEX_ANALYTICS_ENABLED"] = "false"
         return value
     }

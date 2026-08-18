@@ -37,6 +37,9 @@
 ## Codex
 
 - 로컬 공식 client: `codex-cli 0.145.0`.
+- `CodexRuntimeLocator`는 explicit 설정 경로, GUI PATH, 제한된 사용자 로컬/패키지 manager root, Codex·ChatGPT 앱 번들을 이 순서로 탐색한다. shell profile과 login shell은 실행하지 않는다.
+- Node shebang executable은 인접 경로 또는 이미 전달된 안전한 PATH에서 runtime만 확인하고, 그 directory를 app-server child environment에 추가한다. credential·version command를 탐색 단계에서 실행하지 않는다.
+- `CodexAutoProvider`는 발견된 후보를 직렬 시도하고 첫 정상/부분 app-server 결과에서 중단한다. OAuth·CLI status fallback은 안정적인 read-only 계약이 검증될 때까지 출하하지 않는다.
 - `codex app-server generate-json-schema --experimental`에서 `account/rateLimits/read`를 확인했다.
 - 응답은 historical `rateLimits`와 선택적 `rateLimitsByLimitId`를 가진다.
 - 각 bucket은 `primary`, `secondary`, `credits`, `planType`, `rateLimitReachedType`을 독립적으로 생략할 수 있다.

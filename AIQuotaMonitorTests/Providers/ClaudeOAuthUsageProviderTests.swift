@@ -44,6 +44,28 @@ final class ClaudeOAuthUsageProviderTests: XCTestCase {
         }
     }
 
+    func testOAuthParserPreservesZeroAndOnePercentNumbers() throws {
+        let payload = Data(#"""
+        {
+          "five_hour":{"utilization":0},
+          "seven_day":{"utilization":1},
+          "limits":[{
+            "kind":"weekly_scoped",
+            "percent":1,
+            "resets_at":"2026-08-19T00:00:00Z",
+            "scope":{"model":{"display_name":"Fable"}}
+          }]
+        }
+        """#.utf8)
+
+        let snapshot = try ClaudeOAuthUsageParser().parse(payload, observedAt: Date())
+
+        XCTAssertEqual(snapshot.windows.count, 3)
+        XCTAssertEqual(snapshot.windows.first { $0.kind == .fiveHour }?.usedRatio.value ?? -1, 0, accuracy: 0.0001)
+        XCTAssertEqual(snapshot.windows.first { $0.kind == .sevenDay }?.usedRatio.value ?? -1, 0.01, accuracy: 0.0001)
+        XCTAssertEqual(snapshot.windows.first { $0.kind == .custom("Fable 주간") }?.usedRatio.value ?? -1, 0.01, accuracy: 0.0001)
+    }
+
     func testProviderSendsOnlyAnthropicReadOnlyUsageGET() async {
         let body = Data(#"{"five_hour":{"utilization":21},"seven_day":{"utilization":34}}"#.utf8)
         let client = ClaudeRecordingHTTPClient(response: HTTPPayload(statusCode: 200, headers: [:], body: body))

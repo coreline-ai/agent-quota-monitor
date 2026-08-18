@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 
 struct ClaudeOAuthUsageParser: QuotaPayloadParser {
     let provider = ProviderID.claude
@@ -85,8 +86,14 @@ struct ClaudeOAuthUsageParser: QuotaPayloadParser {
     }
 
     private func number(_ value: Any?) -> Double? {
-        guard !(value is Bool) else { return nil }
-        if let number = value as? NSNumber { return number.doubleValue }
+        if let number = value as? NSNumber {
+            // `JSONSerialization` bridges the numeric JSON values 0 and 1 to
+            // `Bool` under Swift's `is Bool` check. CFBoolean has a distinct
+            // runtime type ID, so reject only real JSON booleans and preserve
+            // valid 0% / 1% quota observations.
+            guard CFGetTypeID(number) != CFBooleanGetTypeID() else { return nil }
+            return number.doubleValue
+        }
         if let text = value as? String { return Double(text) }
         return nil
     }

@@ -12,6 +12,7 @@ struct DashboardSettingsView: View {
     @AppStorage(QuotaPreferenceKey.resetStyle) private var resetStyle = QuotaResetStyle.relative
     @AppStorage(QuotaPreferenceKey.theme) private var theme = QuotaVisualTheme.system
     @AppStorage(QuotaPreferenceKey.inspectorMode) private var inspectorMode = QuotaInspectorMode.expanded
+    @AppStorage(QuotaPreferenceKey.providerOrder) private var providerOrderStorage = ProviderDisplayOrder.defaultStorageValue
     @AppStorage(QuotaPreferenceKey.providerVisible(.claude)) private var showClaude = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.codex)) private var showCodex = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.grok)) private var showGrok = true
@@ -138,6 +139,10 @@ struct DashboardSettingsView: View {
                     }
                 }
 
+                Divider()
+
+                providerOrderPanel(palette: palette)
+
                 BeaconSurface(palette: palette) {
                     HStack(spacing: 12) {
                         ProviderMark(provider: .codex, size: 30)
@@ -193,6 +198,102 @@ struct DashboardSettingsView: View {
         }
         .toggleStyle(.checkbox)
         .accessibilityIdentifier("settings.appearance.provider.\(provider.rawValue)")
+    }
+
+    private func providerOrderPanel(palette: BeaconPalette) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Provider 표시 순서")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text("드래그하거나 화살표 버튼으로 메뉴 막대 목록의 순서를 바꿉니다.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            VStack(spacing: 6) {
+                ForEach(providerOrder.providers) { provider in
+                    providerOrderRow(
+                        provider,
+                        index: providerOrder.providers.firstIndex(of: provider) ?? 0,
+                        palette: palette
+                    )
+                }
+            }
+            .accessibilityIdentifier("settings.appearance.providerOrder")
+        }
+    }
+
+    private func providerOrderRow(
+        _ provider: ProviderID,
+        index: Int,
+        palette: BeaconPalette
+    ) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(palette.secondaryText)
+                .accessibilityHidden(true)
+            ProviderMark(provider: provider, size: 22)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(provider.beaconShortName)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(palette.primaryText)
+                Text("\(index + 1)번째 표시")
+                    .font(.caption2)
+                    .foregroundStyle(palette.secondaryText)
+            }
+            Spacer(minLength: 8)
+            Button {
+                moveProvider(provider, by: -1)
+            } label: {
+                Image(systemName: "chevron.up")
+            }
+            .buttonStyle(.borderless)
+            .disabled(index == 0)
+            .help("\(provider.displayName) 위로 이동")
+            .accessibilityLabel("\(provider.displayName) 위로 이동")
+            .accessibilityIdentifier("settings.appearance.providerOrder.\(provider.rawValue).moveUp")
+
+            Button {
+                moveProvider(provider, by: 1)
+            } label: {
+                Image(systemName: "chevron.down")
+            }
+            .buttonStyle(.borderless)
+            .disabled(index == providerOrder.providers.count - 1)
+            .help("\(provider.displayName) 아래로 이동")
+            .accessibilityLabel("\(provider.displayName) 아래로 이동")
+            .accessibilityIdentifier("settings.appearance.providerOrder.\(provider.rawValue).moveDown")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(palette.elevatedSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(palette.border)
+        }
+        .draggable(provider.rawValue)
+        .dropDestination(for: String.self) { values, _ in
+            guard let value = values.first,
+                  let source = ProviderID(rawValue: value),
+                  source != provider else {
+                return false
+            }
+            moveProvider(source, before: provider)
+            return true
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(provider.displayName), \(index + 1)번째 표시")
+        .accessibilityIdentifier("settings.appearance.providerOrder.row.\(provider.rawValue)")
+    }
+
+    private var providerOrder: ProviderDisplayOrder {
+        ProviderDisplayOrder(storageValue: providerOrderStorage)
+    }
+
+    private func moveProvider(_ provider: ProviderID, by offset: Int) {
+        providerOrderStorage = providerOrder.moving(provider, by: offset).storageValue
+    }
+
+    private func moveProvider(_ provider: ProviderID, before destination: ProviderID) {
+        providerOrderStorage = providerOrder.moving(provider, before: destination).storageValue
     }
 
     private func deleteLegacyZAIKey() async {

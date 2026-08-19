@@ -85,6 +85,7 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Gemini, Z.ai GLM Coding Plan의 q
 - 테마 preset: `시스템 / 미드나이트 / 그래파이트`
 - 상세 방식: Provider 행 아래 `상세 펼침 / 요약만`
 - Provider 노출: Claude, Codex, Grok, Gemini, GLM을 메뉴 막대에서 개별 표시/숨김
+- Provider 순서: 메뉴 막대 Provider Ledger에서 드래그 또는 위·아래 이동으로 순서를 변경하고 재실행 후에도 유지
 - 설정은 수집 pipeline이나 credential 승인 상태를 변경하지 않고 화면 표현에만 적용
 
 ### 디자인 토큰 원칙

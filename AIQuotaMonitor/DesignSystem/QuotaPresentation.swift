@@ -92,6 +92,7 @@ enum QuotaPreferenceKey {
     static let resetStyle = "appearance.resetStyle"
     static let theme = "appearance.theme"
     static let inspectorMode = "appearance.inspectorMode"
+    static let providerOrder = "appearance.providerOrder"
 
     static func providerVisible(_ provider: ProviderID) -> String {
         "appearance.provider.\(provider.rawValue).visible"

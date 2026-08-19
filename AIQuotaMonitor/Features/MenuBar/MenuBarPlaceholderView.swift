@@ -40,6 +40,7 @@ struct MenuBarPlaceholderView: View {
     @AppStorage(QuotaPreferenceKey.resetStyle) private var resetStyle = QuotaResetStyle.relative
     @AppStorage(QuotaPreferenceKey.theme) private var theme = QuotaVisualTheme.system
     @AppStorage(QuotaPreferenceKey.inspectorMode) private var inspectorMode = QuotaInspectorMode.expanded
+    @AppStorage(QuotaPreferenceKey.providerOrder) private var providerOrderStorage = ProviderDisplayOrder.defaultStorageValue
     @AppStorage(QuotaPreferenceKey.providerVisible(.claude)) private var showClaude = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.codex)) private var showCodex = true
     @AppStorage(QuotaPreferenceKey.providerVisible(.grok)) private var showGrok = true
@@ -257,7 +258,9 @@ struct MenuBarPlaceholderView: View {
     }
 
     private var visibleSnapshots: [ProviderSnapshot] {
-        model.snapshots.filter { isVisible($0.provider) }
+        ProviderDisplayOrder(storageValue: providerOrderStorage)
+            .ordered(model.snapshots)
+            .filter { isVisible($0.provider) }
     }
 
     private var filteredSnapshots: [ProviderSnapshot] {

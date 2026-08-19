@@ -29,6 +29,25 @@ final class AIQuotaMonitorUITests: XCTestCase {
         assertAllProviderCards(in: app)
     }
 
+    func testMenuBarUsesConfiguredProviderOrder() {
+        let app = XCUIApplication()
+        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST"] = "1"
+        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST_POPOVER"] = "1"
+        app.launchArguments += [
+            "-appearance.providerOrder",
+            "zai,codex,claude,gemini,grok"
+        ]
+        app.launch()
+
+        let popover = app.popovers.firstMatch
+        XCTAssertTrue(popover.waitForExistence(timeout: 5))
+        let zai = app.descendants(matching: .any)["menu.provider.zai"]
+        let codex = app.descendants(matching: .any)["menu.provider.codex"]
+        XCTAssertTrue(zai.waitForExistence(timeout: 3))
+        XCTAssertTrue(codex.waitForExistence(timeout: 3))
+        XCTAssertLessThan(zai.frame.minY, codex.frame.minY)
+    }
+
     func testDashboardCanOpenForUITesting() {
         let app = XCUIApplication()
         app.launchEnvironment["AIQUOTAMONITOR_UI_TEST"] = "1"
@@ -105,6 +124,13 @@ final class AIQuotaMonitorUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["settings.appearance.theme"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["settings.appearance.inspector"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["settings.appearance.provider.gemini"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["settings.appearance.providerOrder"].exists)
+        XCTAssertTrue(app.buttons["settings.appearance.providerOrder.zai.moveUp"].exists)
+        XCTAssertTrue(app.buttons["settings.appearance.providerOrder.claude.moveDown"].exists)
+        let settingsScroll = app.scrollViews["dashboard.settings"]
+        XCTAssertTrue(settingsScroll.exists)
+        settingsScroll.swipeUp()
+        writeScreenshot(app.windows.firstMatch, name: "quotabeacon-settings-provider-order-qa")
         writeScreenshot(app.windows.firstMatch, name: "quotabeacon-settings-qa")
     }
 

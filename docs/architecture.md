@@ -60,7 +60,7 @@ flowchart LR
 - `TrendPresentation`의 기간 filter·Provider/window/reset grouping·freshness segment·bucket downsample과 Swift Charts `Reset Bands` 선 그래프
 - 공통 `QuotaPresentation`·`BeaconComponents`를 사용하는 Beacon Ledger popover와 한도 원장
 - 상태바 하단의 `전체 보기` CTA와 기존 dashboard 개요의 3+2 Provider grid
-- AppStorage 기반 밀도·metric·reset·theme·inspector·Provider 표시 설정
+- AppStorage 기반 밀도·metric·reset·theme·inspector·Provider 표시·메뉴 막대 Provider 순서 설정. 순서 설정은 snapshot 수집·refresh 순서와 독립적으로 popover 표현에만 적용
 - redacted JSON/CSV export, notification threshold dedupe, SMAppService login item
 - 한국어 기본 UI와 영어 resource fallback
 

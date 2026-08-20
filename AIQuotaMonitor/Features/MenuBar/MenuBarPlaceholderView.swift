@@ -48,6 +48,9 @@ struct MenuBarPlaceholderView: View {
     @AppStorage(QuotaPreferenceKey.providerVisible(.zai)) private var showZAI = true
     @State private var scope = MenuProviderScope.all
     @State private var selection: ProviderID?
+    @State private var diskUsage: DiskUsageInfo?
+    @State private var externalDiskUsage: DiskUsageInfo?
+    let diskUsageProvider: any DiskUsageProviding
 
     private var palette: BeaconPalette {
         BeaconPalette.resolve(theme: theme, colorScheme: colorScheme)
@@ -98,6 +101,7 @@ struct MenuBarPlaceholderView: View {
         .preferredColorScheme(theme.preferredColorScheme)
         .onAppear { repairSelection() }
         .onChange(of: filteredSnapshots.map(\.provider)) { _, _ in repairSelection() }
+        .task(id: model.lastRefreshAt) { await refreshDiskUsage() }
     }
 
     private var header: some View {
@@ -179,15 +183,60 @@ struct MenuBarPlaceholderView: View {
     }
 
     private var densityControl: some View {
-        Picker("표시 밀도", selection: $density) {
-            ForEach(QuotaDensity.allCases) { item in
-                Text(item.label).tag(item)
+        HStack(spacing: 6) {
+            Picker("표시 밀도", selection: $density) {
+                ForEach(QuotaDensity.allCases) { item in
+                    Text(item.label).tag(item)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .accessibilityLabel("표시 밀도")
+            .accessibilityIdentifier("menu.density")
+
+            Spacer(minLength: 2)
+
+            HStack(spacing: 5) {
+                if let diskUsage {
+                    diskBadge(diskUsage, icon: "internaldrive", label: "내부")
+                }
+                if let externalDiskUsage {
+                    diskBadge(externalDiskUsage, icon: "externaldrive", label: "외장")
+                }
             }
         }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .accessibilityLabel("표시 밀도")
-        .accessibilityIdentifier("menu.density")
+    }
+
+    private func diskBadge(_ info: DiskUsageInfo, icon: String, label: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(palette.accent)
+            Text(info.compactLabel)
+                .font(.caption2.monospacedDigit().weight(.medium))
+                .foregroundStyle(palette.secondaryText)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .background(palette.elevatedSurface, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .strokeBorder(palette.border)
+        }
+        .help("\(label) · \(info.volumeName) (\(info.path)) 전체 \(info.formattedTotal) 중 여유 공간 \(info.formattedFree)")
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label) \(info.volumeName) 사용량 \(info.compactLabel)")
+        .accessibilityIdentifier(info.isExternal ? "menu.externalDiskUsage" : "menu.diskUsage")
+    }
+
+    private func refreshDiskUsage() async {
+        async let root = diskUsageProvider.fetchDiskUsage(for: .root)
+        async let external = diskUsageProvider.fetchDiskUsage(for: .external)
+        let (rootUsage, externalUsage) = await (root, external)
+        guard !Task.isCancelled else { return }
+        diskUsage = rootUsage
+        externalDiskUsage = externalUsage
     }
 
     private var footer: some View {

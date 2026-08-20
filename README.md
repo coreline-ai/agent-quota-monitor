@@ -46,6 +46,7 @@
 | ↻ **Reset Bands** | 24시간·7일·30일 실제 history와 reset 경계, 25% 주의선, 10% 위험선을 함께 표시합니다. |
 | 🔌 **명시적 연결** | credential 기반 수집은 기본 비활성화이며 사용자가 **읽기 전용 연결 적용**을 눌러야 시작합니다. |
 | 🎛️ **맞춤 표시** | 균형/압축 밀도, 상대/절대 reset, 상세 inspector, 시스템/미드나이트/그래파이트 테마와 메뉴 막대 Provider 표시 순서를 지원합니다. |
+| 💽 **로컬 디스크 용량** | 메뉴바 popover에서 `/` 내부 볼륨과 metadata로 판정한 `/Volumes` local·non-internal 후보의 사용률을 관찰합니다. 외장 후보가 없거나 조회에 실패하면 외장 badge를 숨기며, 디스크 값은 quota/history/export와 분리합니다. |
 | 🔐 **로컬 우선** | 자체 서버·telemetry·광고 SDK가 없으며 원본 payload, 프롬프트, 응답, 이메일, 계정 ID를 저장하지 않습니다. |
 | 🧭 **Universal macOS** | macOS 14 이상에서 Apple Silicon과 Intel을 모두 지원하는 SwiftUI/AppKit 네이티브 앱입니다. |
 
@@ -133,6 +134,8 @@ Scripts/package_release.sh
 
 현재 로컬 설치/검증용 산출물은 ad-hoc 서명을 사용합니다. 공개 배포에는 Developer ID 서명과 Apple notarization이 별도로 필요합니다. 자세한 절차는 [배포 가이드](docs/distribution.md)를 확인하세요.
 
+2026-08-20 코드 릴리스 후보는 전체 XCTest/XCUITest `95 passed / 0 failed`, Universal `arm64`·`x86_64` build, ad-hoc codesign, ZIP SHA-256 검증까지 완료했습니다. Developer ID·notarization·외부 배포는 이 개발 마감 범위에서 제외했습니다. 근거는 [최종 QA 보고서](docs/qa-report-2026-08-20.md)를 확인하세요.
+
 ## 🔌 Provider 연결
 
 1. 메뉴 막대의 QuotaBeacon을 열고 하단의 **전체 보기**를 누릅니다. 여러 Provider를 한 화면에서 비교하려면 이 버튼을 사용합니다.
@@ -210,11 +213,13 @@ docs/                 # architecture, security, contracts, QA evidence
 - [Provider 계약](docs/provider-contracts.md)
 - [Provider 실환경 검증](docs/provider-validation-2026-08-16.md)
 - [Grok·Gemini 추가 검증](docs/provider-validation-2026-08-17.md)
+- [최종 QA 보고서 (2026-08-20)](docs/qa-report-2026-08-20.md)
 - [보안·개인정보](docs/security-privacy.md)
 - [배포 가이드](docs/distribution.md)
 - [외부 참조 등록부](docs/reference-register.md)
 - [정본 개발 계획](dev-plan/implement_20260816_133341.md)
 - [Grok 계약·Gemini CLI 확장 계획](dev-plan/implement_20260817_155407.md)
+- [현재 개발 마감 계획](dev-plan/implement_20260820_150920.md)
 
 ## 🌱 독립 구현
 

@@ -7,18 +7,25 @@ final class StatusItemController: NSObject {
     private let onShowDashboard: () -> Void
     private let onQuit: () -> Void
     private let model: QuotaMonitorModel
+    private let diskUsageProvider: any DiskUsageProviding
 
     init(
         model: QuotaMonitorModel,
+        diskUsageProvider: any DiskUsageProviding,
         onShowDashboard: @escaping () -> Void,
         onShowAllProviders: @escaping () -> Void,
         onQuit: @escaping () -> Void
     ) {
         self.model = model
+        self.diskUsageProvider = diskUsageProvider
         self.onShowDashboard = onShowDashboard
         self.onQuit = onQuit
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        popoverController = PopoverController(model: model, onShowAllProviders: onShowAllProviders)
+        popoverController = PopoverController(
+            model: model,
+            diskUsageProvider: diskUsageProvider,
+            onShowAllProviders: onShowAllProviders
+        )
         super.init()
         configureStatusButton()
     }

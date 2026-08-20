@@ -1,12 +1,19 @@
 # 배포 가이드
 
-확인일: `2026-08-16 KST`
+최근 갱신: `2026-08-20 KST`
 
 ## 현재 가능한 로컬 후보
 
 1. `Scripts/build_release.sh`로 Universal Release 앱을 빌드한다.
 2. `Scripts/package_release.sh`로 앱, LICENSE, third-party notices, changelog, privacy/distribution 문서를 포함한 ZIP과 SHA-256을 만든다.
 3. ad-hoc 산출물은 개발 검증용이며 공개 배포용이 아니다.
+
+## 2026-08-20 코드 릴리스 후보 상태
+
+- 전체 XCTest/XCUITest `95 passed / 0 failed / 0 skipped`, Universal `arm64`·`x86_64` build, ad-hoc `codesign --verify --deep --strict`, ZIP SHA-256 검증을 완료했다.
+- `dist/QuotaBeacon-0.1.0-macOS.zip`과 checksum은 로컬 검증 산출물이며 version control에서 제외한다.
+- 이 완료 보고서는 코드·로컬 패키징 범위까지만 다룬다. Developer ID 서명, notarization, stapling, `spctl`, 외부 업로드·공지·배포는 수행하거나 완료로 표시하지 않았다.
+- 상세 근거는 [최종 QA 보고서](qa-report-2026-08-20.md)에 기록한다.
 
 ## Developer ID gate
 

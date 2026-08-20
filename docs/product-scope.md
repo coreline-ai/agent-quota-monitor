@@ -1,7 +1,7 @@
 # AIQuotaMonitor 제품 범위
 
 작성일: `2026-08-16 KST`
-최근 범위 갱신: `2026-08-17 KST`
+최근 범위 갱신: `2026-08-20 KST`
 
 ## 제품 목표
 
@@ -25,11 +25,12 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Gemini, Z.ai GLM Coding Plan의 q
 - 연결 필요, 인증 만료, 지원 불가, stale, 부분 성공 상태
 - 마지막 정상 값 캐시
 - 수동·자동 refresh
+- 메뉴바 popover의 `/` 내부 디스크 사용률과, local·non-internal metadata 기준으로 선택된 `/Volumes` 외장 후보 사용률
 - 임계치 알림
 - 개요, 한도, 추세, 데이터 소스, 설정 dashboard
 - 로컬 token과 API 정가 예상 비용
 - 한국어 기본 UI와 영어 fallback
-- Developer ID 직접 배포
+- 향후 Developer ID 직접 배포 경로 (현재 코드 개발 마감 범위에서는 제외)
 
 ## MVP 제외
 
@@ -51,8 +52,10 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Gemini, Z.ai GLM Coding Plan의 q
 - quota와 local token/cost를 서로 환산하지 않는다.
 - cache를 live로 표시하지 않는다.
 - 하나의 Provider 실패가 나머지를 막지 않는다.
+- 디스크 조회 실패가 quota 표시와 메뉴바의 기존 Provider 흐름을 막지 않는다.
 - 실제 모델 호출로 quota를 확인하지 않는다.
 - credential과 원본 payload를 로그에 남기지 않는다.
+- 디스크 capacity는 quota snapshot/history/export/notification에 저장하거나 합산하지 않는다.
 
 ## 신규 시각 방향
 
@@ -88,6 +91,12 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Gemini, Z.ai GLM Coding Plan의 q
 - Provider 순서: 메뉴 막대 Provider Ledger에서 드래그 또는 위·아래 이동으로 순서를 변경하고 재실행 후에도 유지
 - 설정은 수집 pipeline이나 credential 승인 상태를 변경하지 않고 화면 표현에만 적용
 
+### 메뉴바 관찰 보조 정보
+
+- 내부 badge는 `/`의 capacity를 사용하며, 외장 badge는 `/Volumes` 아래 local·non-internal volume metadata를 만족하는 후보 중 resolved path가 가장 앞선 하나만 표시한다.
+- removable/ejectable 값은 metadata로 보존하지만 고정형 외장 SSD를 제외하는 단독 조건으로 사용하지 않는다.
+- 후보가 없거나 volume resource 조회가 실패하면 외장 badge만 숨기고 Provider 목록·filter·refresh·dashboard CTA는 유지한다.
+
 ### 디자인 토큰 원칙
 
 - 색상: 시스템 배경과 중성 회색을 기본으로 하고 indigo는 선택·행동 강조에만 사용한다.
@@ -120,7 +129,7 @@ QuotaBeacon은 Codex, Claude Code, Grok Build, Gemini, Z.ai GLM Coding Plan의 q
 | 최종 표시 이름 | `QuotaBeacon` |
 | Bundle ID | `ai.coreline.quotabeacon` |
 | 최소 OS | macOS 14 |
-| 배포 | Developer ID 직접 배포 |
+| 배포 목표 | Developer ID 직접 배포 (외부 운영 gate) |
 | 디자인 언어 | `Signal Ledger` |
 | 메뉴 막대 GUI | `Beacon Ledger` |
 | 개발 서명 | Xcode `Sign to Run Locally` |

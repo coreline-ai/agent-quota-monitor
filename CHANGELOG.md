@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-rc.1 — 2026-08-20 (local validation)
+
+- Added root and eligible local external-volume capacity badges to the menu-bar popover. Disk observations are isolated from quota snapshots, history, export, and notifications.
+- Added deterministic Provider display-order regression coverage for visibility changes, scope-style filtering, settings re-entry, and relaunch persistence.
+- Completed the local code release-candidate gate: 95 XCTest/XCUITest cases, Universal `arm64`/`x86_64` build, ad-hoc signature integrity, ZIP checksum, fixture, security, and originality audits.
+- Kept Developer ID signing, notarization, and public distribution out of this development completion scope; see `docs/distribution.md`.
+
 ## 0.1.0-beta.1 — 2026-08-16
 
 - Added the Greenfield QuotaBeacon macOS menu-bar app and Signal Ledger dashboard.

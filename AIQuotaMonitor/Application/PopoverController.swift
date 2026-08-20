@@ -6,7 +6,11 @@ final class PopoverController: NSObject, NSPopoverDelegate {
     private let popover: NSPopover
     private let model: QuotaMonitorModel
 
-    init(model: QuotaMonitorModel, onShowAllProviders: @escaping () -> Void) {
+    init(
+        model: QuotaMonitorModel,
+        diskUsageProvider: any DiskUsageProviding,
+        onShowAllProviders: @escaping () -> Void
+    ) {
         self.model = model
         popover = NSPopover()
         super.init()
@@ -18,7 +22,8 @@ final class PopoverController: NSObject, NSPopoverDelegate {
                 model: model,
                 onShowAllProviders: { [weak self] in
                     self?.showAllProviders(onShowAllProviders)
-                }
+                },
+                diskUsageProvider: diskUsageProvider
             )
         )
         popover.delegate = self

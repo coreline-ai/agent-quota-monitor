@@ -59,6 +59,7 @@ flowchart LR
 - quota chart와 local token/cost chart를 분리한 5-section Signal Ledger dashboard
 - `TrendPresentation`의 기간 filter·Provider/window/reset grouping·freshness segment·bucket downsample과 Swift Charts `Reset Bands` 선 그래프
 - 공통 `QuotaPresentation`·`BeaconComponents`를 사용하는 Beacon Ledger popover와 한도 원장
+- Domain의 `DiskUsageProviding` 계약과 Infrastructure actor `DiskUsageService`가 `/` 및 `/Volumes` capacity를 관찰하고, Application 조립 경계를 통해 메뉴바에 주입된다. 외장 후보는 local·non-internal volume metadata와 결정론적 path 순서로만 선택한다.
 - 상태바 하단의 `전체 보기` CTA와 기존 dashboard 개요의 3+2 Provider grid
 - AppStorage 기반 밀도·metric·reset·theme·inspector·Provider 표시·메뉴 막대 Provider 순서 설정. 순서 설정은 snapshot 수집·refresh 순서와 독립적으로 popover 표현에만 적용
 - redacted JSON/CSV export, notification threshold dedupe, SMAppService login item
@@ -108,6 +109,7 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 4. `SnapshotStore`가 부분 결과를 last-known-good와 병합하되 이전 값은 `stale`로 바꾼다.
 5. menu/dashboard는 `ProviderSnapshot`만 소비하며 credential path나 원본 payload를 보지 않는다.
 6. popover가 보이면 60초, 일반 상태 5분, 실패 시 15/60분 backoff를 적용한다.
+7. `MenuBarPlaceholderView`는 `DiskUsageProviding`을 `.task(id: model.lastRefreshAt)`로 호출해 root/external badge만 갱신한다. disk 정보는 quota snapshot, history, export, notification 흐름에 들어가지 않고, task 취소 시 늦은 결과를 반영하지 않는다.
 
 ## 전체 보기 UI 흐름
 
@@ -174,3 +176,4 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 - Release configuration은 hardened runtime을 켠다.
 - 현재 자동화는 Universal ad-hoc 후보와 ZIP/checksum까지 검증한다.
 - Developer ID, notarization, Sparkle은 owner credential과 공개 feed가 필요한 외부 gate다.
+- 2026-08-20 코드 릴리스 후보의 Debug test·Universal build·ad-hoc signature·checksum 결과는 [최종 QA 보고서](qa-report-2026-08-20.md)에 기록하며, 외부 gate는 해당 완료 보고서에서 제외한다.

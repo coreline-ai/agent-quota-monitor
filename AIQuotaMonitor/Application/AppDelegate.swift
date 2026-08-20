@@ -5,6 +5,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var dashboardWindowController: DashboardWindowController?
     private var statusItemController: StatusItemController?
     private lazy var model = QuotaMonitorModel()
+    private lazy var diskUsageProvider: any DiskUsageProviding = DiskUsageService()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let environment = ProcessInfo.processInfo.environment
@@ -17,11 +18,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // XCTest host alive after the assertions have completed.
         if isUnitTestHost { return }
 
+        if isUITesting, environment["AIQUOTAMONITOR_UI_TEST_RESET_DEFAULTS"] == "1" {
+            let domain = Bundle.main.bundleIdentifier ?? "ai.coreline.quotabeacon"
+            UserDefaults.standard.removePersistentDomain(forName: domain)
+        }
+
         LegacyPreferencesMigrator.migrateIfNeeded()
         let dashboardWindowController = DashboardWindowController(model: model)
         self.dashboardWindowController = dashboardWindowController
         statusItemController = StatusItemController(
             model: model,
+            diskUsageProvider: diskUsageProvider,
             onShowDashboard: { [weak dashboardWindowController] in
                 dashboardWindowController?.showWindow()
             },

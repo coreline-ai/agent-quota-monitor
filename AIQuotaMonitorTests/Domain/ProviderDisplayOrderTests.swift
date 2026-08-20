@@ -57,4 +57,25 @@ final class ProviderDisplayOrderTests: XCTestCase {
         XCTAssertEqual(ordered.map(\.provider), [.zai, .codex, .claude, .gemini, .grok])
         XCTAssertEqual(snapshots.map(\.provider), [.zai, .grok, .claude, .gemini, .codex])
     }
+
+    func testVisibilityAndScopeStyleFiltersPreserveCustomRelativeOrder() {
+        let snapshots = [
+            ProviderSnapshot.unavailable(.claude, state: .notConfigured),
+            ProviderSnapshot.unavailable(.codex, state: .partial),
+            ProviderSnapshot.unavailable(.gemini, state: .stale),
+            ProviderSnapshot.unavailable(.grok, state: .rateLimited),
+            ProviderSnapshot.unavailable(.zai, state: .available)
+        ]
+        let displayOrder = ProviderDisplayOrder([.zai, .codex, .claude, .gemini, .grok])
+        let ordered = displayOrder.ordered(snapshots)
+
+        let visible = ordered.filter { $0.provider != .codex }
+        let connected = visible.filter { [.available, .partial, .stale].contains($0.state) }
+        let attention = visible.filter { $0.state != .available }
+
+        XCTAssertEqual(visible.map(\.provider), [.zai, .claude, .gemini, .grok])
+        XCTAssertEqual(connected.map(\.provider), [.zai, .gemini])
+        XCTAssertEqual(attention.map(\.provider), [.claude, .gemini, .grok])
+        XCTAssertEqual(ordered.map(\.provider), [.zai, .codex, .claude, .gemini, .grok])
+    }
 }

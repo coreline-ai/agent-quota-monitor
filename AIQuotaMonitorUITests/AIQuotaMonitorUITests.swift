@@ -11,6 +11,10 @@ final class AIQuotaMonitorUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 5))
         let popover = app.popovers.firstMatch
         XCTAssertTrue(popover.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            app.descendants(matching: .any)["menu.diskUsage"].waitForExistence(timeout: 3),
+            "internal disk usage badge is missing"
+        )
         let summaryScreenshot = popover.screenshot()
         addScreenshot(summaryScreenshot, name: "quotabeacon-menu-ledger-summary-qa")
 
@@ -46,6 +50,57 @@ final class AIQuotaMonitorUITests: XCTestCase {
         XCTAssertTrue(zai.waitForExistence(timeout: 3))
         XCTAssertTrue(codex.waitForExistence(timeout: 3))
         XCTAssertLessThan(zai.frame.minY, codex.frame.minY)
+    }
+
+    func testProviderOrderPersistsThroughVisibilityChangeAndRelaunch() {
+        let app = XCUIApplication()
+        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST"] = "1"
+        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST_RESET_DEFAULTS"] = "1"
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 5))
+        app.staticTexts["설정"].click()
+        XCTAssertTrue(app.staticTexts["dashboard.settings.title"].waitForExistence(timeout: 3))
+
+        let settingsScroll = app.scrollViews["dashboard.settings"]
+        XCTAssertTrue(settingsScroll.waitForExistence(timeout: 3))
+        settingsScroll.swipeUp()
+
+        let zaiMoveUp = app.buttons["settings.appearance.providerOrder.zai.moveUp"]
+        XCTAssertTrue(zaiMoveUp.waitForExistence(timeout: 3))
+        for _ in 0 ..< 4 {
+            zaiMoveUp.click()
+        }
+
+        assertZAIComesBeforeClaudeInSettings(app)
+
+        settingsScroll.swipeDown()
+        settingsScroll.swipeDown()
+        let geminiVisibility = app.descendants(matching: .any)["settings.appearance.provider.gemini"]
+        XCTAssertTrue(geminiVisibility.waitForExistence(timeout: 3))
+        geminiVisibility.click()
+        geminiVisibility.click()
+
+        app.staticTexts["개요"].click()
+        XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 3))
+        app.staticTexts["설정"].click()
+        XCTAssertTrue(app.staticTexts["dashboard.settings.title"].waitForExistence(timeout: 3))
+        settingsScroll.swipeUp()
+        assertZAIComesBeforeClaudeInSettings(app)
+
+        app.terminate()
+        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST_RESET_DEFAULTS"] = "0"
+        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST_POPOVER"] = "1"
+        app.launch()
+
+        let popover = app.popovers.firstMatch
+        XCTAssertTrue(popover.waitForExistence(timeout: 5))
+        let zai = app.descendants(matching: .any)["menu.provider.zai"]
+        let claude = app.descendants(matching: .any)["menu.provider.claude"]
+        XCTAssertTrue(zai.waitForExistence(timeout: 3))
+        XCTAssertTrue(claude.waitForExistence(timeout: 3))
+        XCTAssertLessThan(zai.frame.minY, claude.frame.minY)
+        addScreenshot(popover.screenshot(), name: "quotabeacon-provider-order-persistence-qa")
     }
 
     func testDashboardCanOpenForUITesting() {
@@ -148,9 +203,14 @@ final class AIQuotaMonitorUITests: XCTestCase {
         let sidebarEntry = app.staticTexts["연결"]
         XCTAssertTrue(sidebarEntry.isHittable)
         sidebarButton.click()
-        XCTAssertFalse(sidebarEntry.isHittable)
+        let isNotHittable = NSPredicate(format: "isHittable == false")
+        expectation(for: isNotHittable, evaluatedWith: sidebarEntry)
+        waitForExpectations(timeout: 3)
+
         sidebarButton.click()
-        XCTAssertTrue(sidebarEntry.isHittable)
+        let isHittable = NSPredicate(format: "isHittable == true")
+        expectation(for: isHittable, evaluatedWith: sidebarEntry)
+        waitForExpectations(timeout: 3)
 
         app.staticTexts["추세"].click()
         XCTAssertTrue(app.staticTexts["dashboard.trends.title"].waitForExistence(timeout: 3))
@@ -174,6 +234,14 @@ final class AIQuotaMonitorUITests: XCTestCase {
                 "missing overview card for \(provider)"
             )
         }
+    }
+
+    private func assertZAIComesBeforeClaudeInSettings(_ app: XCUIApplication) {
+        let zai = app.buttons["settings.appearance.providerOrder.zai.moveUp"]
+        let claude = app.buttons["settings.appearance.providerOrder.claude.moveUp"]
+        XCTAssertTrue(zai.waitForExistence(timeout: 3))
+        XCTAssertTrue(claude.waitForExistence(timeout: 3))
+        XCTAssertLessThan(zai.frame.minY, claude.frame.minY)
     }
 
     private func addScreenshot(_ screenshot: XCUIScreenshot, name: String) {

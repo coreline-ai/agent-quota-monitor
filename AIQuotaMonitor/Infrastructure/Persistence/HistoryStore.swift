@@ -38,7 +38,8 @@ actor HistoryStore {
         }
     }
 
-    func save(_ snapshots: [ProviderSnapshot], now: Date = Date()) throws {
+    @discardableResult
+    func save(_ snapshots: [ProviderSnapshot], now: Date = Date()) throws -> [ProviderSnapshot] {
         try FileManager.default.createDirectory(
             at: fileURL.deletingLastPathComponent(),
             withIntermediateDirectories: true
@@ -51,6 +52,7 @@ actor HistoryStore {
             data = try encode(retained)
         }
         try data.write(to: fileURL, options: [.atomic])
+        return retained
     }
 
     func delete() throws {

@@ -106,7 +106,7 @@ actor ZAIPluginUsageProvider: QuotaProvider {
         if let lastRequestAt,
            startedAt.timeIntervalSince(lastRequestAt) < Self.minimumRequestInterval,
            let cachedSuccess {
-            return cachedSuccess
+            return ProviderFetchResult(snapshot: cachedSuccess.snapshot.markingFreshness(.recent))
         }
         do {
             let profile = try profileReader.read()

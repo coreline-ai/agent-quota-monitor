@@ -4,7 +4,7 @@ struct DashboardSettingsView: View {
     @ObservedObject var model: QuotaMonitorModel
     @StateObject private var launchAtLogin = LaunchAtLoginService()
     @Environment(\.colorScheme) private var colorScheme
-    @AppStorage("refresh.minutes") private var refreshMinutes = 5
+    @AppStorage("refresh.minutes") private var refreshMinutes = 1
     @AppStorage("notifications.enabled") private var notificationsEnabled = true
     @AppStorage("quietHours.enabled") private var quietHoursEnabled = false
     @AppStorage(QuotaPreferenceKey.density) private var density = QuotaDensity.balanced
@@ -33,7 +33,7 @@ struct DashboardSettingsView: View {
                         get: { launchAtLogin.isEnabled },
                         set: { enabled in launchAtLogin.setEnabled(enabled) }
                     ))
-                    Picker("기본 새로고침", selection: $refreshMinutes) {
+                    Picker("자동 새로고침", selection: $refreshMinutes) {
                         Text("1분").tag(1); Text("5분").tag(5); Text("15분").tag(15)
                     }
                     Toggle("알림", isOn: $notificationsEnabled)
@@ -85,6 +85,9 @@ struct DashboardSettingsView: View {
             .padding(28)
         }
         .accessibilityIdentifier("dashboard.settings")
+        .onChange(of: refreshMinutes) { _, _ in
+            model.refreshScheduleDidChange()
+        }
     }
 
     private var appearancePanel: some View {

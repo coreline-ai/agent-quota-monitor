@@ -50,6 +50,7 @@ struct MenuBarPlaceholderView: View {
     @State private var selection: ProviderID?
     @State private var diskUsage: DiskUsageInfo?
     @State private var externalDiskUsage: DiskUsageInfo?
+    @State private var didLoadDiskUsage = false
     let diskUsageProvider: any DiskUsageProviding
 
     private var palette: BeaconPalette {
@@ -183,7 +184,7 @@ struct MenuBarPlaceholderView: View {
     }
 
     private var densityControl: some View {
-        HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Picker("표시 밀도", selection: $density) {
                 ForEach(QuotaDensity.allCases) { item in
                     Text(item.label).tag(item)
@@ -194,14 +195,16 @@ struct MenuBarPlaceholderView: View {
             .accessibilityLabel("표시 밀도")
             .accessibilityIdentifier("menu.density")
 
-            Spacer(minLength: 2)
-
-            HStack(spacing: 5) {
+            HStack(spacing: 6) {
                 if let diskUsage {
                     diskBadge(diskUsage, icon: "internaldrive", label: "내부")
+                } else {
+                    diskPlaceholder(icon: "internaldrive", label: "내부")
                 }
                 if let externalDiskUsage {
                     diskBadge(externalDiskUsage, icon: "externaldrive", label: "외장")
+                } else {
+                    diskPlaceholder(icon: "externaldrive", label: "외장")
                 }
             }
         }
@@ -212,13 +215,15 @@ struct MenuBarPlaceholderView: View {
             Image(systemName: icon)
                 .font(.caption2)
                 .foregroundStyle(palette.accent)
-            Text(info.compactLabel)
+            Text("\(label) \(info.compactLabel)")
                 .font(.caption2.monospacedDigit().weight(.medium))
                 .foregroundStyle(palette.secondaryText)
                 .lineLimit(1)
+                .minimumScaleFactor(0.78)
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(palette.elevatedSurface, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -230,6 +235,29 @@ struct MenuBarPlaceholderView: View {
         .accessibilityIdentifier(info.isExternal ? "menu.externalDiskUsage" : "menu.diskUsage")
     }
 
+    private func diskPlaceholder(icon: String, label: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(palette.secondaryText)
+            Text("\(label) \(didLoadDiskUsage ? "연결 없음" : "확인 중")")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(palette.secondaryText)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(palette.elevatedSurface, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .strokeBorder(palette.border)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label) \(didLoadDiskUsage ? "연결 없음" : "확인 중")")
+        .accessibilityIdentifier(label == "외장" ? "menu.externalDiskUsage.placeholder" : "menu.diskUsage.placeholder")
+    }
+
     private func refreshDiskUsage() async {
         async let root = diskUsageProvider.fetchDiskUsage(for: .root)
         async let external = diskUsageProvider.fetchDiskUsage(for: .external)
@@ -237,6 +265,7 @@ struct MenuBarPlaceholderView: View {
         guard !Task.isCancelled else { return }
         diskUsage = rootUsage
         externalDiskUsage = externalUsage
+        didLoadDiskUsage = true
     }
 
     private var footer: some View {
@@ -500,15 +529,15 @@ private struct ProviderLedgerRow: View {
                 }
             }
             .frame(height: 5)
-            Text(QuotaPresentation.percentText(ratio))
+            Text(QuotaPresentation.metricText(for: window, mode: metricMode))
                 .font(.caption2.monospacedDigit().weight(.semibold))
                 .foregroundStyle(color(for: urgency))
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
-                .frame(width: 38, alignment: .trailing)
+                .frame(minWidth: 38, alignment: .trailing)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(window.kind.label), \(metricMode.label) \(QuotaPresentation.percentText(ratio))")
+        .accessibilityLabel("\(window.kind.label), \(QuotaPresentation.metricText(for: window, mode: metricMode))")
     }
 
     private var resetSummary: String {

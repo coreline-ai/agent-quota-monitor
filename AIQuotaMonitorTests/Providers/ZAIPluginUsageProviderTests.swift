@@ -69,6 +69,8 @@ final class ZAIPluginUsageProviderTests: XCTestCase {
         XCTAssertEqual(first.snapshot.state, .available)
         XCTAssertEqual(first.snapshot.windows.count, 2)
         XCTAssertEqual(second.snapshot.state, .available)
+        XCTAssertTrue(first.snapshot.windows.allSatisfy { $0.provenance.freshness == .live })
+        XCTAssertTrue(second.snapshot.windows.allSatisfy { $0.provenance.freshness == .recent })
         let count = await executor.queryCount()
         XCTAssertEqual(count, 1)
     }

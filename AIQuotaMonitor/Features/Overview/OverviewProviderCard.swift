@@ -82,7 +82,7 @@ private struct OverviewQuotaLine: View {
                     .foregroundStyle(palette.primaryText)
                     .lineLimit(1)
                 Spacer(minLength: 4)
-                Text("\(metricMode.shortLabel) \(QuotaPresentation.percentText(displayRatio))")
+                Text(QuotaPresentation.metricText(for: window, mode: metricMode))
                     .font(.caption2.monospacedDigit().weight(.semibold))
                     .foregroundStyle(urgencyColor)
             }
@@ -110,7 +110,7 @@ private struct OverviewQuotaLine: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "\(window.kind.label), \(metricMode.label) \(QuotaPresentation.percentText(displayRatio)), " +
+            "\(window.kind.label), \(QuotaPresentation.metricText(for: window, mode: metricMode)), " +
                 "\(window.provenance.freshness.label), " +
                 "\(QuotaPresentation.resetText(for: window.resetsAt, style: resetStyle))"
         )

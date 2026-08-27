@@ -3,9 +3,7 @@ import XCTest
 @MainActor
 final class AIQuotaMonitorUITests: XCTestCase {
     func testMenuBarBeaconLedgerCanOpen() {
-        let app = XCUIApplication()
-        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST"] = "1"
-        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST_POPOVER"] = "1"
+        let app = makeTestApplication(popover: true)
         app.launch()
 
         XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 5))
@@ -34,9 +32,7 @@ final class AIQuotaMonitorUITests: XCTestCase {
     }
 
     func testMenuBarUsesConfiguredProviderOrder() {
-        let app = XCUIApplication()
-        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST"] = "1"
-        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST_POPOVER"] = "1"
+        let app = makeTestApplication(popover: true)
         app.launchArguments += [
             "-appearance.providerOrder",
             "zai,codex,claude,gemini,grok"
@@ -53,9 +49,7 @@ final class AIQuotaMonitorUITests: XCTestCase {
     }
 
     func testProviderOrderPersistsThroughVisibilityChangeAndRelaunch() {
-        let app = XCUIApplication()
-        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST"] = "1"
-        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST_RESET_DEFAULTS"] = "1"
+        let app = makeTestApplication(popover: false, resetDefaults: true)
         app.launch()
 
         XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 5))
@@ -104,8 +98,7 @@ final class AIQuotaMonitorUITests: XCTestCase {
     }
 
     func testDashboardCanOpenForUITesting() {
-        let app = XCUIApplication()
-        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST"] = "1"
+        let app = makeTestApplication()
         app.launch()
 
         XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 5))
@@ -190,8 +183,7 @@ final class AIQuotaMonitorUITests: XCTestCase {
     }
 
     func testDashboardChromeStaysSeparatedAndPinned() {
-        let app = XCUIApplication()
-        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST"] = "1"
+        let app = makeTestApplication()
         app.launch()
 
         XCTAssertTrue(app.staticTexts["dashboard.overview.title"].waitForExistence(timeout: 5))
@@ -224,6 +216,28 @@ final class AIQuotaMonitorUITests: XCTestCase {
 
     private func writeScreenshot(_ element: XCUIElement, name: String) {
         addScreenshot(element.screenshot(), name: name)
+    }
+
+    private func makeTestApplication(
+        popover: Bool = false,
+        resetDefaults: Bool = true
+    ) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST"] = "1"
+        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST_POPOVER"] = popover ? "1" : "0"
+        app.launchEnvironment["AIQUOTAMONITOR_UI_TEST_RESET_DEFAULTS"] = resetDefaults ? "1" : "0"
+        // Never let UI smoke tests inherit the user's real provider opt-ins or
+        // touch credentials/network. Command-line defaults override persistent
+        // values only for the launched test process.
+        app.launchArguments += [
+            "-codex.readOnlyEnabled", "NO",
+            "-claude.readOnlyEnabled", "NO",
+            "-claude.snapshotEnabled", "NO",
+            "-grok.readOnlyEnabled", "NO",
+            "-gemini.readOnlyEnabled", "NO",
+            "-zai.readOnlyEnabled", "NO",
+        ]
+        return app
     }
 
     private func assertAllProviderCards(in app: XCUIApplication) {

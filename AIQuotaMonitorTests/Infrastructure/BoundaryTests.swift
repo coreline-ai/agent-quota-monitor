@@ -115,6 +115,14 @@ final class BoundaryTests: XCTestCase {
     func testRefreshPolicyBackoffAndRedaction() {
         let policy = RefreshPolicy.standard
         XCTAssertEqual(policy.interval(popoverVisible: true, idle: false, consecutiveFailures: 0), .seconds(60))
+        XCTAssertEqual(
+            policy.interval(popoverVisible: false, idle: false, consecutiveFailures: 0, configuredMinutes: 1),
+            .seconds(60)
+        )
+        XCTAssertEqual(
+            policy.interval(popoverVisible: false, idle: false, consecutiveFailures: 0, configuredMinutes: 15),
+            .seconds(900)
+        )
         XCTAssertEqual(policy.interval(popoverVisible: false, idle: false, consecutiveFailures: 1), .seconds(900))
         XCTAssertEqual(policy.interval(popoverVisible: false, idle: false, consecutiveFailures: 3), .seconds(3_600))
 

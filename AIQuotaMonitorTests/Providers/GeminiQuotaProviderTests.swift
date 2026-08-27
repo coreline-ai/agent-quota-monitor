@@ -141,6 +141,8 @@ final class GeminiQuotaProviderTests: XCTestCase {
         let second = await provider.fetchQuota()
         XCTAssertEqual(first.snapshot.state, .available)
         XCTAssertEqual(second.snapshot.state, .available)
+        XCTAssertTrue(first.snapshot.windows.allSatisfy { $0.provenance.freshness == .live })
+        XCTAssertTrue(second.snapshot.windows.allSatisfy { $0.provenance.freshness == .recent })
         let queryCount = await executor.queryCount()
         XCTAssertEqual(queryCount, 1)
 

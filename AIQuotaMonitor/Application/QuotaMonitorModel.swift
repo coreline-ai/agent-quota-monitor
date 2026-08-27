@@ -9,38 +9,60 @@ final class QuotaMonitorModel: ObservableObject {
 
     private var coordinator: RefreshCoordinator
     private var automaticRefreshTask: Task<Void, Never>?
+    private var inFlightRefresh: InFlightRefresh?
+    private var consecutiveRefreshFailures = 0
     private var popoverVisible = false
     private let notificationService = NotificationService()
     private let historyStore: HistoryStore
+    private let preferences: UserDefaults
     private var didLoadHistory = false
 
+    private struct InFlightRefresh {
+        let id: UUID
+        let task: Task<Void, Never>
+    }
+
     init(
-        providers: [any QuotaProvider]? = nil
+        providers: [any QuotaProvider]? = nil,
+        historyStore: HistoryStore? = nil,
+        preferences: UserDefaults? = nil
     ) {
-        historyStore = HistoryStore(fileURL: Self.defaultHistoryURL())
+        let preferences = preferences ?? AppPreferences.current
+        self.preferences = preferences
+        self.historyStore = historyStore ?? HistoryStore(fileURL: Self.defaultHistoryURL())
         snapshots = ProviderID.allCases.map { provider in
             .unavailable(provider, state: .notConfigured)
         }
         coordinator = RefreshCoordinator(
-            providers: providers ?? Self.configuredProviders(defaults: .standard),
+            providers: providers ?? Self.configuredProviders(defaults: preferences),
             store: SnapshotStore()
         )
     }
 
     func refresh() async {
-        guard !isRefreshing else { return }
-        isRefreshing = true
-        snapshots = await coordinator.refreshAll()
-        lastRefreshAt = Date()
-        isRefreshing = false
-        history.append(contentsOf: snapshots)
-        try? await historyStore.save(history)
-        await deliverQuotaNotificationsIfAllowed()
+        // A popover open, a manual refresh, and the automatic loop can overlap.
+        // The previous early return discarded later requests, which left a newly
+        // opened popover showing the prior value until the next polling interval.
+        // Let all callers await the same collection instead.
+        if let inFlightRefresh {
+            await inFlightRefresh.task.value
+            return
+        }
+
+        let id = UUID()
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.performRefresh(id: id)
+        }
+        inFlightRefresh = InFlightRefresh(id: id, task: task)
+        await task.value
     }
 
     func cancel() {
         automaticRefreshTask?.cancel()
         automaticRefreshTask = nil
+        cancelInFlightRefresh()
+        let coordinator = coordinator
         Task { await coordinator.cancelAll() }
     }
 
@@ -51,25 +73,37 @@ final class QuotaMonitorModel: ObservableObject {
             await self.loadHistoryIfNeeded()
             while !Task.isCancelled {
                 await self.refresh()
-                let failures = self.snapshots.filter { $0.state == .failed || $0.state == .offline }.count
+                guard !Task.isCancelled else { break }
                 let interval = RefreshPolicy.standard.interval(
                     popoverVisible: self.popoverVisible,
                     idle: false,
-                    consecutiveFailures: failures
+                    consecutiveFailures: self.consecutiveRefreshFailures,
+                    configuredMinutes: self.configuredRefreshMinutes
                 )
-                try? await Task.sleep(for: interval)
+                do {
+                    try await Task.sleep(for: interval)
+                } catch {
+                    break
+                }
             }
         }
     }
 
     func setPopoverVisible(_ visible: Bool) {
+        guard popoverVisible != visible else { return }
         popoverVisible = visible
-        automaticRefreshTask?.cancel()
-        automaticRefreshTask = nil
-        startAutomaticRefresh()
+        restartAutomaticRefresh()
     }
 
     func handleWake() {
+        restartAutomaticRefresh()
+    }
+
+    func refreshScheduleDidChange() {
+        restartAutomaticRefresh()
+    }
+
+    private func restartAutomaticRefresh() {
         automaticRefreshTask?.cancel()
         automaticRefreshTask = nil
         startAutomaticRefresh()
@@ -85,7 +119,9 @@ final class QuotaMonitorModel: ObservableObject {
         geminiExecutablePath: String,
         zaiEnabled: Bool
     ) async {
-        await coordinator.cancelAll()
+        let previousCoordinator = coordinator
+        cancelInFlightRefresh()
+        await previousCoordinator.cancelAll()
         let providers = Self.providers(
             codexEnabled: codexEnabled,
             codexExecutablePath: codexExecutablePath,
@@ -97,6 +133,7 @@ final class QuotaMonitorModel: ObservableObject {
             zaiEnabled: zaiEnabled
         )
         coordinator = RefreshCoordinator(providers: providers, store: SnapshotStore())
+        consecutiveRefreshFailures = 0
         isRefreshing = false
         await refresh()
     }
@@ -112,7 +149,7 @@ final class QuotaMonitorModel: ObservableObject {
     func requestNotificationPermission() async -> Bool {
         do {
             let granted = try await notificationService.requestAuthorization()
-            UserDefaults.standard.set(granted, forKey: "notifications.authorized")
+            preferences.set(granted, forKey: "notifications.authorized")
             return granted
         } catch {
             return false
@@ -135,11 +172,58 @@ final class QuotaMonitorModel: ObservableObject {
         history = (try? await historyStore.load()) ?? []
     }
 
+    private func performRefresh(id: UUID) async {
+        guard inFlightRefresh?.id == id else { return }
+        isRefreshing = true
+        defer {
+            if inFlightRefresh?.id == id {
+                inFlightRefresh = nil
+                isRefreshing = false
+            }
+        }
+
+        let coordinator = coordinator
+        let nextSnapshots = await coordinator.refreshAll()
+        guard !Task.isCancelled, inFlightRefresh?.id == id else { return }
+
+        snapshots = nextSnapshots
+        consecutiveRefreshFailures = Self.nextFailureStreak(
+            current: consecutiveRefreshFailures,
+            snapshots: nextSnapshots
+        )
+        lastRefreshAt = Date()
+        isRefreshing = false
+        history.append(contentsOf: nextSnapshots)
+
+        if let retained = try? await historyStore.save(history),
+           !Task.isCancelled,
+           inFlightRefresh?.id == id {
+            history = retained
+        }
+        guard !Task.isCancelled, inFlightRefresh?.id == id else { return }
+        await deliverQuotaNotificationsIfAllowed()
+    }
+
+    private func cancelInFlightRefresh() {
+        inFlightRefresh?.task.cancel()
+        inFlightRefresh = nil
+        isRefreshing = false
+    }
+
+    nonisolated static func nextFailureStreak(
+        current: Int,
+        snapshots: [ProviderSnapshot]
+    ) -> Int {
+        let attempts = snapshots.compactMap(\.lastAttempt)
+        guard !attempts.isEmpty else { return 0 }
+        return attempts.allSatisfy { !$0.succeeded } ? current + 1 : 0
+    }
+
     private func deliverQuotaNotificationsIfAllowed() async {
         guard ProcessInfo.processInfo.environment["AIQUOTAMONITOR_UI_TEST"] != "1" else {
             return
         }
-        let defaults = UserDefaults.standard
+        let defaults = preferences
         guard defaults.bool(forKey: "notifications.authorized"),
               defaults.object(forKey: "notifications.enabled") == nil || defaults.bool(forKey: "notifications.enabled") else {
             return
@@ -195,6 +279,15 @@ final class QuotaMonitorModel: ObservableObject {
         }
         let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return root.appending(path: "QuotaBeacon/history-v1.json")
+    }
+
+    private var configuredRefreshMinutes: Int {
+        let defaults = preferences
+        guard let value = defaults.object(forKey: "refresh.minutes") as? Int,
+              [1, 5, 15].contains(value) else {
+            return 1
+        }
+        return value
     }
 
     private static func providers(

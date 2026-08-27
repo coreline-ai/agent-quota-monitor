@@ -1,6 +1,6 @@
 # Provider 계약 기준
 
-확인일: `2026-08-17 KST`
+확인일: `2026-08-17 KST` · 최근 갱신: `2026-08-27 KST`
 
 이 문서는 공식 문서, 로컬에 설치된 공식 client가 관측한 계약, 승인된 redacted 실계정 probe만 기록한다. 외부 프로젝트 source·fixture는 제품에 사용하지 않았다.
 
@@ -29,7 +29,7 @@
 - 응답의 `five_hour`, `seven_day`에서 `utilization` 또는 `used_percentage`를 `0...100`으로 읽는다. reset은 ISO-8601, epoch seconds, epoch milliseconds를 허용한다.
 - `limits[]`의 `kind=weekly_scoped`, `scope.model.display_name=Fable` 항목은 별도 Fable 주간 window로 정규화한다. 기존 `fable_weekly` 계열 field는 schema drift fallback이다.
 - 5시간 또는 7일 window 하나만 존재하면 `partial`로 보존하고 누락 값을 0%로 만들지 않는다.
-- 성공 응답은 actor 내부에서 최소 180초 재사용한다. `429`는 `Retry-After` 숫자 또는 기본 15분 backoff를 적용해 usage endpoint 과호출을 방지한다.
+- 성공 응답은 actor 내부에서 최소 180초 재사용하고, 재사용 값은 원래 관측 시각을 유지한 `recent` freshness로 반환한다. `429`는 `Retry-After` 숫자 또는 기본 15분 backoff를 적용해 usage endpoint 과호출을 방지한다.
 - URLSession은 ephemeral이며 redirect·cookie·response cache를 거부한다. timeout은 10초다.
 - access token은 메모리에서만 사용한다. refresh token을 parse·사용·전송하거나 Keychain을 갱신하지 않으며 Claude 설정/statusLine도 수정하지 않는다.
 - endpoint는 공개 stable API 문서가 아니라 first-party client 동작과 실계정 응답에서 관측한 계약이므로 `observed · Beta`다. 공식 statusLine `rate_limits`는 독립 fallback 계약으로만 유지한다.
@@ -71,7 +71,7 @@
 - stdout은 메모리에서만 처리하고 ANSI를 제거한 뒤 `GEMINI MODELS`와 다음 group marker 사이의 두 limit label·잔여율·선택적 refresh duration만 정규화한다. Account/email과 다른 모델 그룹은 폐기한다.
 - PTY의 terminal query 응답은 단계별 bounded timer를 보존하며 외부 process guard는 45초, combined output 상한은 512 KiB다.
 - `usedRatio = 1 - remainingRatio`로 계산하며 값 범위가 `0...100`이 아니면 malformed로 처리한다. `Quota available`처럼 reset이 노출되지 않으면 `resetsAt=nil`을 보존한다.
-- 성공 결과는 5분 재사용한다. CLI 없음·로그인 실패·trusted workspace 없음·output drift는 typed state이며 정적 요금제 상한으로 현재 사용률을 추정하지 않는다.
+- 성공 결과는 5분 재사용하며 재사용 값은 원래 관측 시각을 유지한 `recent` freshness로 반환한다. CLI 없음·로그인 실패·trusted workspace 없음·output drift는 typed state이며 정적 요금제 상한으로 현재 사용률을 추정하지 않는다.
 - Antigravity CLI TUI는 machine-readable stable API가 아니므로 `observed · Beta`다. QuotaBeacon은 Gemini CLI/Code Assist 내부 endpoint나 OAuth credential을 직접 호출하지 않는다.
 
 ## Z.ai
@@ -82,7 +82,7 @@
 - shell alias는 실행하지 않는다. 한 줄 alias를 tokenization해 `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN` 두 값만 자식 process environment로 전달하고 나머지 environment·flag·command는 무시한다. ZAI HTTPS base URL과 `claude` command가 아니면 거부한다.
 - stdout의 Model/Tool section과 원본 quota response는 저장·export·log하지 않는다. `Platform: ZAI`와 `Quota limit data:` 뒤의 단일 JSON object만 분리하고, `Token usage(5 Hour)`와 `MCP usage(1 Month)` percentage만 정규화한다.
 - 공식 output에는 두 window의 reset 시각이 없으므로 `resetsAt=nil`을 보존한다. 누락 window는 `partial`, 0%는 실제 0%, 범위 밖 값은 malformed로 처리한다.
-- 성공 결과는 5분 재사용하며 process timeout은 25초다. 실행 내부 retry·loop·모델 호출·login/logout·credential write-back은 없다.
+- 성공 결과는 5분 재사용하며 재사용 값은 원래 관측 시각을 유지한 `recent` freshness로 반환한다. process timeout은 25초다. 실행 내부 retry·loop·모델 호출·login/logout·credential write-back은 없다.
 - Coding Plan Usage Policy의 지원 도구 제한과 외부 plugin dependency 때문에 이 경로는 `observed · Beta`다. plugin 미설치·profile 미검출·output drift를 실제 값으로 추정하지 않고 typed state로 표시한다.
 
 ## 공통 typed state

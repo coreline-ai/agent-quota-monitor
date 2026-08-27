@@ -42,6 +42,31 @@ final class PresentationTests: XCTestCase {
         XCTAssertEqual(QuotaPresentation.urgency(forRemaining: 1), .healthy)
     }
 
+    func testQuotaPresentationMakesFullyUsedWindowExplicit() throws {
+        let window = QuotaWindow(
+            kind: .sharedWeekly,
+            usedRatio: try QuotaRatio(1),
+            resetsAt: nil,
+            provenance: ValueProvenance(
+                source: .syntheticFixture,
+                contract: .observed,
+                observedAt: Date(timeIntervalSince1970: 0),
+                freshness: .live
+            )
+        )
+
+        XCTAssertEqual(QuotaPresentation.ratio(for: window, mode: .remaining), 0)
+        XCTAssertEqual(QuotaPresentation.percentText(window.usedRatio.value), "100%")
+        XCTAssertEqual(
+            QuotaPresentation.metricText(for: window, mode: .remaining),
+            "한도 소진 · 사용 100%"
+        )
+        XCTAssertEqual(
+            QuotaPresentation.metricText(for: window, mode: .used),
+            "한도 소진 · 사용 100%"
+        )
+    }
+
     func testClaudeCompactSummaryPrefersFiveHourOverScopedWeeklyWindow() throws {
         let provenance = ValueProvenance(
             source: .syntheticFixture,

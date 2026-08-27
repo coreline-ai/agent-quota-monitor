@@ -1,6 +1,6 @@
 # AIQuotaMonitor 아키텍처
 
-작성일: `2026-08-16 KST`
+작성일: `2026-08-16 KST` · 최근 갱신: `2026-08-27 KST`
 
 ## 환경 기준선
 
@@ -52,7 +52,7 @@ flowchart LR
 - 신규 `QuotaBeaconStatus` template asset 기반 status item과 왼쪽 popover/오른쪽 menu
 - `QuotaRatio`, window provenance/freshness, typed state/error, last-known-good merge
 - cancellation/timeout HTTP·Process 경계와 read-only credential validator/Keychain
-- versioned JSON history, 90일·25 MiB retention, Provider별 single-flight refresh
+- versioned JSON history, disk·memory 공통 90일·25 MiB retention, Provider별·전체 refresh single-flight
 - Claude Keychain OAuth usage GET adapter와 선택적 statusLine snapshot parser, Codex 공식 app-server read-only adapter
 - `CodexRuntimeLocator`가 저장 경로·GUI PATH·사용자 로컬·Node manager·Codex/ChatGPT 앱 번들 후보를 shell profile 없이 결정론적으로 탐색하고, `CodexAutoProvider`가 후보별 app-server를 직렬 시도
 - Grok 공식 CLI billing backend, Antigravity CLI Gemini `/usage`, Z.ai 공식 `glm-plan-usage` plugin 기반 `observed · Beta` adapter, 다섯 Provider 독립 synthetic parser fixture
@@ -84,7 +84,7 @@ Provider credential 접근은 기본 비활성화되어 있으며 설정의 명�
 - UI: 메뉴·dashboard·설정의 핵심 사용자 흐름
 - Release: 서명, 공증, clean install, update, idle 성능
 
-GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUITest로 분리한다. 테스트 환경에서만 status item의 popover를 자동 표시하며, production activation policy와 사용자 클릭 경로는 변경하지 않는다. 팝오버의 SwiftUI 접근성 자식은 macOS ControlCenter bridge에서 제한될 수 있어, 존재·클릭·요약/상세 렌더 변화와 보존 스크린샷을 함께 검증한다.
+GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUITest로 분리한다. 테스트 환경에서만 status item의 popover를 자동 표시하며, production activation policy와 사용자 클릭 경로는 변경하지 않는다. XCUITest는 전용 UserDefaults suite를 사용하고 실제 Provider opt-in을 command-line domain에서 모두 꺼 사용자 credential/network와 production 설정을 건드리지 않는다. 팝오버의 SwiftUI 접근성 자식은 macOS ControlCenter bridge에서 제한될 수 있어, 존재·클릭·요약/상세 렌더 변화와 보존 스크린샷을 함께 검증한다.
 
 ## Phase 1 결정 기록
 
@@ -105,10 +105,10 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 
 1. `AppDelegate`가 shared `QuotaMonitorModel`과 status/dashboard controller를 조립한다.
 2. `QuotaMonitorModel`은 저장된 opt-in 설정만으로 Provider adapter를 만든다. Claude/Grok이 비활성화된 경우 Keychain/auth file 접근이나 network request는 발생하지 않는다. Codex는 opt-in 상태에서만 locator가 executable metadata를 확인하고 app-server provider를 조립한다.
-3. `RefreshCoordinator`가 Provider별 single-flight task를 실행하고 한 Provider 실패를 격리한다.
+3. `QuotaMonitorModel`은 popover·수동·자동 refresh가 겹치면 동일 완료 task를 기다리게 하고, `RefreshCoordinator`가 Provider별 single-flight task를 실행해 중복 수집과 설정 변경 중 이전 결과의 늦은 반영을 막는다.
 4. `SnapshotStore`가 부분 결과를 last-known-good와 병합하되 이전 값은 `stale`로 바꾼다.
 5. menu/dashboard는 `ProviderSnapshot`만 소비하며 credential path나 원본 payload를 보지 않는다.
-6. popover가 보이면 60초, 일반 상태 5분, 실패 시 15/60분 backoff를 적용한다.
+6. 일반 상태는 사용자가 고른 1·5·15분 주기를 사용하고, popover가 보이면 즉시 갱신한 뒤 최대 60초 간격을 사용한다. 실제 시도한 모든 Provider가 연속 실패한 경우에만 15/60분 전역 backoff를 적용해 한 Provider 실패가 정상 Provider 갱신을 막지 않게 한다.
 7. `MenuBarPlaceholderView`는 `DiskUsageProviding`을 `.task(id: model.lastRefreshAt)`로 호출해 root/external badge만 갱신한다. disk 정보는 quota snapshot, history, export, notification 흐름에 들어가지 않고, task 취소 시 늦은 결과를 반영하지 않는다.
 
 ## 전체 보기 UI 흐름
@@ -151,7 +151,7 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 3. `GeminiCLIQuotaExecutor`가 고정된 PTY command로 공식 CLI를 열고 `/usage`만 전송한다. terminal protocol 응답은 단계 timeout을 재시작하지 않으며 prompt/model/tool/agent command는 전송하지 않는다.
 4. `GeminiQuotaParser`가 ANSI를 제거하고 `GEMINI MODELS` 그룹의 주간·5시간 잔여율과 refresh duration만 정규화한다.
 5. account/email, Claude/GPT 그룹, session output, raw TUI는 즉시 폐기하며 history에는 normalized ratio와 provenance만 저장한다.
-6. 성공 결과는 5분 재사용한다. current Gemini CLI 개인 login migration 오류 때문에 기존 `/stats model`과 내부 Code Assist endpoint는 사용하지 않는다.
+6. 성공 결과는 5분 재사용하되 재사용 window는 원래 관측 시각을 유지하고 freshness를 `recent`로 바꾼다. current Gemini CLI 개인 login migration 오류 때문에 기존 `/stats model`과 내부 Code Assist endpoint는 사용하지 않는다.
 
 ## Claude read-only 흐름
 
@@ -159,7 +159,7 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 2. `ClaudeKeychainCredentialReader`가 `/usr/bin/security`로 service `Claude Code-credentials`, 현재 macOS account의 generic password를 읽고 `claudeAiOauth.accessToken`만 선택한다.
 3. `ClaudeOAuthUsageProvider`가 Anthropic OAuth usage allowlist URL에 GET을 보내고 redirect·cookie·cache를 거부한다. refresh token·모델 endpoint·login/logout은 사용하지 않는다.
 4. `ClaudeOAuthUsageParser`가 5시간·7일·Fable 주간 window만 공통 domain으로 정규화한다. 원본 payload와 credential은 저장하지 않는다.
-5. 성공 결과는 180초 재사용하고 429에서는 backoff한다. 이 계약은 `observed · Beta`이며 기존 statusLine은 수정하지 않는다.
+5. 성공 결과는 180초 재사용하고 재사용 window는 원래 관측 시각과 `recent` freshness를 사용하며, 429에서는 backoff한다. 이 계약은 `observed · Beta`이며 기존 statusLine은 수정하지 않는다.
 
 ## Z.ai GLM official plugin 흐름
 
@@ -169,7 +169,7 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 4. `ZAIPluginUsageExecutor`가 최소 environment로 공식 `query-usage.mjs`를 정확히 1회 실행하며 timeout은 25초다.
 5. `ZAIPluginOutputExtractor`는 Model/Tool section을 폐기하고 ZAI Quota limit JSON만 `ZAIQuotaParser`에 전달한다.
 6. parser는 5시간 token과 월간 MCP percentage를 `officialCLI · observed · live` window로 정규화한다. reset은 공식 output에 없으므로 만들지 않는다.
-7. 성공 결과는 5분 재사용하고 credential/profile/plugin을 수정하지 않는다. profile/plugin/output drift는 typed failure이며 이 연결은 Beta다.
+7. 성공 결과는 5분 재사용하되 재사용 window는 원래 관측 시각과 `recent` freshness를 사용하고 credential/profile/plugin을 수정하지 않는다. profile/plugin/output drift는 typed failure이며 이 연결은 Beta다.
 
 ## 배포 경계
 

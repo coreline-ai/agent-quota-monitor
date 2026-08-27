@@ -75,6 +75,11 @@ final class ProviderParserTests: XCTestCase {
             XCTAssertEqual($0 as? ProviderErrorCode, .malformedPayload)
         }
 
+        let fullyUsed = Data(#"{"config":{"creditUsagePercent":100,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","end":"2026-09-01T00:00:00Z"}}}"#.utf8)
+        let fullyUsedSnapshot = try GrokQuotaParser().parse(fullyUsed, observedAt: observedAt)
+        XCTAssertEqual(fullyUsedSnapshot.windows.first?.usedRatio.value, 1)
+        XCTAssertEqual(fullyUsedSnapshot.windows.first?.remainingRatio, 0)
+
         let fiveHourLike = Data(#"{"config":{"creditUsagePercent":10,"currentPeriod":{"type":"FIVE_HOUR","end":"2026-09-01T00:00:00Z"}}}"#.utf8)
         let unknownPeriod = try GrokQuotaParser().parse(fiveHourLike, observedAt: observedAt)
         XCTAssertEqual(unknownPeriod.windows.first?.kind, .custom("공용 크레딧"))

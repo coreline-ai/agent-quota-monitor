@@ -41,9 +41,14 @@ enum DiskVolumeSelector {
                 candidate.path != "/"
                     && !candidate.isHidden
                     && candidate.isLocal
-                    && !candidate.isInternal
+                    && (!candidate.isInternal || candidate.isRemovable || candidate.isEjectable)
             }
-            .sorted { $0.path < $1.path }
+            .sorted { lhs, rhs in
+                let lhsPortable = lhs.isRemovable || lhs.isEjectable
+                let rhsPortable = rhs.isRemovable || rhs.isEjectable
+                if lhsPortable != rhsPortable { return lhsPortable }
+                return lhs.path.localizedStandardCompare(rhs.path) == .orderedAscending
+            }
             .first
     }
 }
@@ -99,19 +104,43 @@ public actor DiskUsageService: DiskUsageProviding {
     }
 
     private func fetchExternalDiskUsage() -> DiskUsageInfo? {
-        let volumesPath = "/Volumes"
-        guard let items = try? FileManager.default.contentsOfDirectory(atPath: volumesPath) else {
-            return nil
-        }
+        let resourceKeys: [URLResourceKey] = [
+            .volumeTotalCapacityKey,
+            .volumeAvailableCapacityForImportantUsageKey,
+            .volumeAvailableCapacityKey,
+            .volumeLocalizedNameKey,
+            .volumeNameKey,
+            .volumeIsLocalKey,
+            .volumeIsInternalKey,
+            .volumeIsRemovableKey,
+            .volumeIsEjectableKey
+        ]
+        let mountedURLs = FileManager.default.mountedVolumeURLs(
+            includingResourceValuesForKeys: resourceKeys,
+            options: [.skipHiddenVolumes]
+        ) ?? []
 
-        let candidates = items.compactMap { item -> DiskVolumeMetadata? in
-            let isHidden = item.hasPrefix(".")
-            let fullPath = "\(volumesPath)/\(item)"
-            let url = URL(fileURLWithPath: fullPath)
-            let resolved = url.resolvingSymlinksInPath().path
+        // mountedVolumeURLs is the authoritative source. The /Volumes fallback
+        // covers newly attached media during the short interval before the mount
+        // registry has propagated the new volume.
+        let directoryURLs = ((try? FileManager.default.contentsOfDirectory(
+            at: URL(fileURLWithPath: "/Volumes", isDirectory: true),
+            includingPropertiesForKeys: resourceKeys,
+            options: [.skipsHiddenFiles]
+        )) ?? [])
+        let uniqueURLs = Dictionary(
+            (mountedURLs + directoryURLs).map { ($0.resolvingSymlinksInPath().path, $0) },
+            uniquingKeysWith: { first, _ in first }
+        ).values
 
-            guard resolved != "/", fullPath != "/" else { return nil }
-            return readVolumeMetadata(at: fullPath, fallbackName: item, isHidden: isHidden)
+        let candidates = uniqueURLs.compactMap { url -> DiskVolumeMetadata? in
+            let resolvedPath = url.resolvingSymlinksInPath().path
+            guard resolvedPath != "/", resolvedPath.hasPrefix("/Volumes/") else { return nil }
+            return readVolumeMetadata(
+                at: url.path,
+                fallbackName: url.lastPathComponent,
+                isHidden: url.lastPathComponent.hasPrefix(".")
+            )
         }
 
         guard let candidate = DiskVolumeSelector.externalCandidate(from: candidates) else {
@@ -142,25 +171,27 @@ public actor DiskUsageService: DiskUsageProviding {
             .volumeIsInternalKey,
             .volumeIsRemovableKey,
             .volumeIsEjectableKey
-        ]),
-        let total = values.volumeTotalCapacity,
-        total > 0,
-        let isLocal = values.volumeIsLocal,
-        let isInternal = values.volumeIsInternal else {
+        ]) else {
             return nil
         }
 
+        let fileSystemAttributes = try? FileManager.default.attributesOfFileSystem(forPath: path)
+        let totalFromAttributes = (fileSystemAttributes?[.systemSize] as? NSNumber)?.int64Value
+        let freeFromAttributes = (fileSystemAttributes?[.systemFreeSize] as? NSNumber)?.int64Value
+        let total = values.volumeTotalCapacity.map(Int64.init) ?? totalFromAttributes ?? 0
+        guard total > 0 else { return nil }
+
         let availableImportant = values.volumeAvailableCapacityForImportantUsage
         let availableStandard = values.volumeAvailableCapacity.map { Int64($0) }
-        let available = availableImportant ?? availableStandard ?? 0
+        let available = availableImportant ?? availableStandard ?? freeFromAttributes ?? 0
         let actualName = values.volumeLocalizedName ?? values.volumeName ?? fallbackName
         return DiskVolumeMetadata(
             path: url.resolvingSymlinksInPath().path,
             volumeName: actualName,
-            totalBytes: Int64(total),
+            totalBytes: total,
             freeBytes: available,
-            isLocal: isLocal,
-            isInternal: isInternal,
+            isLocal: values.volumeIsLocal ?? true,
+            isInternal: values.volumeIsInternal ?? (path == "/"),
             isRemovable: values.volumeIsRemovable ?? false,
             isEjectable: values.volumeIsEjectable ?? false,
             isHidden: isHidden

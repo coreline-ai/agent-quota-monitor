@@ -10,6 +10,7 @@ final class DashboardWindowController: NSWindowController, NSToolbarDelegate {
         let chrome = DashboardChromeModel()
         self.chrome = chrome
         let contentView = DashboardRootView(model: model, chrome: chrome)
+            .defaultAppStorage(AppPreferences.current)
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 920, height: 620),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],

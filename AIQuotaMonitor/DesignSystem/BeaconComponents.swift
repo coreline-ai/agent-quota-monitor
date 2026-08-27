@@ -70,7 +70,7 @@ struct BeaconQuotaBar: View {
                     .foregroundStyle(palette.primaryText)
                     .lineLimit(1)
                 Spacer(minLength: 4)
-                Text("\(metricMode.shortLabel) \(QuotaPresentation.percentText(displayRatio))")
+                Text(QuotaPresentation.metricText(for: window, mode: metricMode))
                     .font((compact ? Font.caption2 : Font.caption).monospacedDigit().weight(.semibold))
                     .foregroundStyle(urgencyColor)
             }
@@ -111,7 +111,7 @@ struct BeaconQuotaBar: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "\(window.kind.label), \(metricMode.label) \(QuotaPresentation.percentText(displayRatio)), \(urgency.label), \(QuotaPresentation.resetText(for: window.resetsAt, style: resetStyle))"
+            "\(window.kind.label), \(QuotaPresentation.metricText(for: window, mode: metricMode)), \(urgency.label), \(QuotaPresentation.resetText(for: window.resetsAt, style: resetStyle))"
         )
     }
 

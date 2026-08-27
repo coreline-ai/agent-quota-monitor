@@ -169,7 +169,7 @@ struct ProviderConnectionsView: View {
     private func loadConfigurationIfNeeded() {
         guard !didLoad else { return }
         didLoad = true
-        let defaults = UserDefaults.standard
+        let defaults = AppPreferences.current
         codexEnabled = defaults.bool(forKey: "codex.readOnlyEnabled")
         codexPath = defaults.string(forKey: "codex.executablePath")
             ?? ProviderConnectionDefaults.codexExecutablePath()
@@ -203,7 +203,7 @@ struct ProviderConnectionsView: View {
         grokAuthPath = normalizedGrokPath
         geminiPath = normalizedGeminiPath
 
-        let defaults = UserDefaults.standard
+        let defaults = AppPreferences.current
         defaults.set(codexEnabled, forKey: "codex.readOnlyEnabled")
         defaults.set(normalizedCodexPath, forKey: "codex.executablePath")
         defaults.set(claudeEnabled, forKey: "claude.readOnlyEnabled")

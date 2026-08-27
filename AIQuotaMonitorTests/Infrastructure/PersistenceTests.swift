@@ -25,7 +25,8 @@ final class PersistenceTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 1_786_860_000)
         let recent = snapshot(finishedAt: now)
         let expired = snapshot(finishedAt: now.addingTimeInterval(-91 * 86_400))
-        try await store.save([expired, recent], now: now)
+        let retained = try await store.save([expired, recent], now: now)
+        XCTAssertEqual(retained.count, 1)
         let loaded = try await store.load()
         XCTAssertEqual(loaded.count, 1)
 

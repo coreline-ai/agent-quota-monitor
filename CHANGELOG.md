@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Fixed automatic refresh so the 1/5/15-minute preference is honored, overlapping triggers share one completed refresh, and opening the popover does not lose a refresh request.
+- Fixed global backoff so one failed Provider no longer delays healthy Providers; 15/60-minute backoff now requires every attempted Provider to fail in consecutive cycles.
+- Made exhausted quota explicit as `한도 소진 · 사용 100%`, including Grok's exact 100% boundary.
+- Marked reused Claude, Gemini, and Z.ai cache observations as `recent` instead of `live` while preserving their original observation time.
+- Kept the in-memory history aligned with the persisted 90-day/25-MiB retention result.
+- Isolated XCUITests from real Provider opt-ins and preserved the user's application preferences around each UI test.
+
 ## 0.1.0-rc.1 — 2026-08-20 (local validation)
 
 - Added root and eligible local external-volume capacity badges to the menu-bar popover. Disk observations are isolated from quota snapshots, history, export, and notifications.

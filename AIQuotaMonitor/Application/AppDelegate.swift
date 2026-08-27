@@ -19,11 +19,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if isUnitTestHost { return }
 
         if isUITesting, environment["AIQUOTAMONITOR_UI_TEST_RESET_DEFAULTS"] == "1" {
-            let domain = Bundle.main.bundleIdentifier ?? "ai.coreline.quotabeacon"
-            UserDefaults.standard.removePersistentDomain(forName: domain)
+            AppPreferences.resetUITestDomain()
         }
 
-        LegacyPreferencesMigrator.migrateIfNeeded()
+        if !isUITesting {
+            LegacyPreferencesMigrator.migrateIfNeeded(defaults: AppPreferences.current)
+        }
         let dashboardWindowController = DashboardWindowController(model: model)
         self.dashboardWindowController = dashboardWindowController
         statusItemController = StatusItemController(

@@ -85,9 +85,10 @@ final class ClaudeOAuthUsageProviderTests: XCTestCase {
         XCTAssertNil(request?.httpBody)
         XCTAssertFalse(request?.httpShouldHandleCookies ?? true)
 
-        _ = await provider.fetchQuota()
+        let cached = await provider.fetchQuota()
         let requestCount = await client.requestCount()
         XCTAssertEqual(requestCount, 1)
+        XCTAssertTrue(cached.snapshot.windows.allSatisfy { $0.provenance.freshness == .recent })
     }
 
     func testProviderMapsAuthenticationAndNetworkFailures() async {

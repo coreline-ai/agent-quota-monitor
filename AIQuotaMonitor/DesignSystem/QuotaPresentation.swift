@@ -137,6 +137,16 @@ enum QuotaPresentation {
         }
     }
 
+    static func metricText(for window: QuotaWindow, mode: QuotaMetricMode) -> String {
+        // With the default "remaining" mode, a fully consumed window has a
+        // zero-width meter. State it explicitly instead of making 100% usage
+        // look like an absent value.
+        if window.remainingRatio <= 0 {
+            return "한도 소진 · 사용 100%"
+        }
+        return "\(mode.shortLabel) \(percentText(ratio(for: window, mode: mode)))"
+    }
+
     static func urgency(forRemaining remaining: Double) -> QuotaUrgency {
         if remaining <= 0.10 { return .critical }
         if remaining <= 0.25 { return .warning }

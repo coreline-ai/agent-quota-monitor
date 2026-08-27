@@ -25,6 +25,7 @@ final class PopoverController: NSObject, NSPopoverDelegate {
                 },
                 diskUsageProvider: diskUsageProvider
             )
+            .defaultAppStorage(AppPreferences.current)
         )
         popover.delegate = self
     }

@@ -237,4 +237,34 @@ struct ProviderSnapshot: Codable, Hashable, Identifiable, Sendable {
         if result.state != .available, !result.windows.isEmpty { result.state = .stale }
         return result
     }
+
+    func markingFreshness(_ freshness: DataFreshness) -> ProviderSnapshot {
+        var result = self
+        result.windows = windows.map { window in
+            QuotaWindow(
+                kind: window.kind,
+                usedRatio: window.usedRatio,
+                resetsAt: window.resetsAt,
+                provenance: ValueProvenance(
+                    source: window.provenance.source,
+                    contract: window.provenance.contract,
+                    observedAt: window.provenance.observedAt,
+                    freshness: freshness
+                )
+            )
+        }
+        if let credits {
+            result.credits = CreditBalance(
+                amount: credits.amount,
+                unlimited: credits.unlimited,
+                provenance: ValueProvenance(
+                    source: credits.provenance.source,
+                    contract: credits.provenance.contract,
+                    observedAt: credits.provenance.observedAt,
+                    freshness: freshness
+                )
+            )
+        }
+        return result
+    }
 }

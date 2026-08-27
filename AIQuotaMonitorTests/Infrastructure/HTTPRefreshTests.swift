@@ -81,6 +81,76 @@ final class HTTPRefreshTests: XCTestCase {
             XCTAssertEqual(snapshots.first { $0.provider == provider }?.state, .partial)
         }
     }
+
+    @MainActor
+    func testQuotaMonitorModelCoalescesOverlappingRefreshesAndCanCancel() async {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let provider = CountingProvider()
+        let model = QuotaMonitorModel(
+            providers: [provider],
+            historyStore: HistoryStore(fileURL: directory.appending(path: "history.json"))
+        )
+
+        let first = Task { await model.refresh() }
+        try? await Task.sleep(for: .milliseconds(10))
+        let second = Task { await model.refresh() }
+        await first.value
+        await second.value
+
+        let count = await provider.fetchCount()
+        XCTAssertEqual(count, 1)
+        XCTAssertFalse(model.isRefreshing)
+        XCTAssertNotNil(model.lastRefreshAt)
+
+        let cancelled = Task { await model.refresh() }
+        try? await Task.sleep(for: .milliseconds(10))
+        model.cancel()
+        await cancelled.value
+        XCTAssertFalse(model.isRefreshing)
+    }
+
+    func testGlobalFailureStreakOnlyBacksOffWhenEveryAttemptFails() {
+        let success = attemptedSnapshot(.codex, succeeded: true)
+        let failure = attemptedSnapshot(.grok, succeeded: false)
+        let notConfigured = ProviderSnapshot.unavailable(.gemini, state: .notConfigured)
+
+        XCTAssertEqual(
+            QuotaMonitorModel.nextFailureStreak(
+                current: 2,
+                snapshots: [success, failure, notConfigured]
+            ),
+            0
+        )
+        XCTAssertEqual(
+            QuotaMonitorModel.nextFailureStreak(
+                current: 2,
+                snapshots: [failure, notConfigured]
+            ),
+            3
+        )
+        XCTAssertEqual(
+            QuotaMonitorModel.nextFailureStreak(
+                current: 2,
+                snapshots: [notConfigured]
+            ),
+            0
+        )
+    }
+
+    private func attemptedSnapshot(_ provider: ProviderID, succeeded: Bool) -> ProviderSnapshot {
+        var snapshot = ProviderSnapshot.unavailable(
+            provider,
+            state: succeeded ? .partial : .failed
+        )
+        snapshot.lastAttempt = CollectionAttempt(
+            startedAt: Date(timeIntervalSince1970: 1),
+            finishedAt: Date(timeIntervalSince1970: 2),
+            succeeded: succeeded,
+            diagnostic: nil
+        )
+        return snapshot
+    }
 }
 
 private actor CountingProvider: QuotaProvider {

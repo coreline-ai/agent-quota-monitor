@@ -51,6 +51,8 @@ struct MenuBarPlaceholderView: View {
     @State private var diskUsage: DiskUsageInfo?
     @State private var externalDiskUsage: DiskUsageInfo?
     @State private var didLoadDiskUsage = false
+    @State private var manualRefreshFeedbackVisible = false
+    @State private var refreshRotation = 0.0
     let diskUsageProvider: any DiskUsageProviding
 
     private var palette: BeaconPalette {
@@ -142,22 +144,22 @@ struct MenuBarPlaceholderView: View {
             .accessibilityIdentifier("menu.scope")
 
             Button {
-                Task { await model.refresh() }
+                startManualRefresh()
             } label: {
-                Image(systemName: "arrow.clockwise")
+                Image(systemName: reduceMotion && refreshFeedbackActive ? "hourglass" : "arrow.clockwise")
                     .font(.system(size: 14, weight: .semibold))
-                    .rotationEffect(.degrees(model.isRefreshing && !reduceMotion ? 360 : 0))
-                    .animation(
-                        reduceMotion ? nil : .easeInOut(duration: 0.55),
-                        value: model.isRefreshing
-                    )
+                    .foregroundStyle(refreshFeedbackActive ? palette.accent : palette.primaryText)
+                    .rotationEffect(.degrees(reduceMotion ? 0 : refreshRotation))
                     .frame(width: 26, height: 26)
                     .contentShape(Rectangle())
+                    .onAppear { updateRefreshAnimation() }
+                    .onChange(of: refreshFeedbackActive) { _, _ in updateRefreshAnimation() }
+                    .onChange(of: reduceMotion) { _, _ in updateRefreshAnimation() }
             }
             .buttonStyle(.plain)
-            .disabled(model.isRefreshing)
-            .help("모든 Provider 새로고침")
-            .accessibilityLabel("새로고침")
+            .disabled(refreshFeedbackActive)
+            .help(refreshFeedbackActive ? "모든 Provider 갱신 중" : "모든 Provider 새로고침")
+            .accessibilityLabel(refreshFeedbackActive ? "새로고침 중" : "새로고침")
             .accessibilityIdentifier("menu.refresh")
         }
     }
@@ -318,8 +320,36 @@ struct MenuBarPlaceholderView: View {
     }
 
     private var lastRefreshText: String {
+        if refreshFeedbackActive { return "데이터 갱신 중…" }
         guard let lastRefreshAt = model.lastRefreshAt else { return "로컬 전용 · 연결 상태 확인 중" }
-        return "업데이트 \(lastRefreshAt.formatted(date: .omitted, time: .shortened))"
+        return "업데이트 \(lastRefreshAt.formatted(date: .omitted, time: .standard))"
+    }
+
+    private var refreshFeedbackActive: Bool {
+        model.isRefreshing || manualRefreshFeedbackVisible
+    }
+
+    private func startManualRefresh() {
+        guard !refreshFeedbackActive else { return }
+        manualRefreshFeedbackVisible = true
+        Task { @MainActor in
+            let clock = ContinuousClock()
+            let minimumVisibleUntil = clock.now.advanced(by: .milliseconds(450))
+            await model.refreshManually()
+            try? await clock.sleep(until: minimumVisibleUntil)
+            manualRefreshFeedbackVisible = false
+        }
+    }
+
+    private func updateRefreshAnimation() {
+        guard refreshFeedbackActive, !reduceMotion else {
+            withAnimation(.none) { refreshRotation = 0 }
+            return
+        }
+        refreshRotation = 0
+        withAnimation(.linear(duration: 0.75).repeatForever(autoreverses: false)) {
+            refreshRotation = 360
+        }
     }
 
     private var connectedVisibleCount: Int {

@@ -19,6 +19,7 @@ final class QuotaMonitorModel: ObservableObject {
 
     private struct InFlightRefresh {
         let id: UUID
+        let policy: ProviderRefreshPolicy
         let task: Task<Void, Never>
     }
 
@@ -40,21 +41,36 @@ final class QuotaMonitorModel: ObservableObject {
     }
 
     func refresh() async {
+        await refresh(policy: .scheduled)
+    }
+
+    func refreshManually() async {
+        await refresh(policy: .userInitiated)
+    }
+
+    private func refresh(policy: ProviderRefreshPolicy) async {
         // A popover open, a manual refresh, and the automatic loop can overlap.
         // The previous early return discarded later requests, which left a newly
         // opened popover showing the prior value until the next polling interval.
-        // Let all callers await the same collection instead.
+        // Let all callers await the same collection. If a manual request joined a
+        // scheduled collection, follow it with one user-initiated collection so
+        // the explicit request is never reduced to a cached automatic result.
         if let inFlightRefresh {
+            let activePolicy = inFlightRefresh.policy
             await inFlightRefresh.task.value
+            guard !Task.isCancelled else { return }
+            if policy == .userInitiated, activePolicy == .scheduled {
+                await refresh(policy: .userInitiated)
+            }
             return
         }
 
         let id = UUID()
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
-            await self.performRefresh(id: id)
+            await self.performRefresh(id: id, policy: policy)
         }
-        inFlightRefresh = InFlightRefresh(id: id, task: task)
+        inFlightRefresh = InFlightRefresh(id: id, policy: policy, task: task)
         await task.value
     }
 
@@ -135,7 +151,7 @@ final class QuotaMonitorModel: ObservableObject {
         coordinator = RefreshCoordinator(providers: providers, store: SnapshotStore())
         consecutiveRefreshFailures = 0
         isRefreshing = false
-        await refresh()
+        await refreshManually()
     }
 
     var connectedCount: Int {
@@ -172,7 +188,7 @@ final class QuotaMonitorModel: ObservableObject {
         history = (try? await historyStore.load()) ?? []
     }
 
-    private func performRefresh(id: UUID) async {
+    private func performRefresh(id: UUID, policy: ProviderRefreshPolicy) async {
         guard inFlightRefresh?.id == id else { return }
         isRefreshing = true
         defer {
@@ -183,7 +199,7 @@ final class QuotaMonitorModel: ObservableObject {
         }
 
         let coordinator = coordinator
-        let nextSnapshots = await coordinator.refreshAll()
+        let nextSnapshots = await coordinator.refreshAll(policy: policy)
         guard !Task.isCancelled, inFlightRefresh?.id == id else { return }
 
         snapshots = nextSnapshots
@@ -192,7 +208,6 @@ final class QuotaMonitorModel: ObservableObject {
             snapshots: nextSnapshots
         )
         lastRefreshAt = Date()
-        isRefreshing = false
         history.append(contentsOf: nextSnapshots)
 
         if let retained = try? await historyStore.save(history),

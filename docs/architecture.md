@@ -52,7 +52,7 @@ flowchart LR
 - 신규 `QuotaBeaconStatus` template asset 기반 status item과 왼쪽 popover/오른쪽 menu
 - `QuotaRatio`, window provenance/freshness, typed state/error, last-known-good merge
 - cancellation/timeout HTTP·Process 경계와 read-only credential validator/Keychain
-- versioned JSON history, disk·memory 공통 90일·25 MiB retention, Provider별·전체 refresh single-flight
+- versioned JSON history, disk·memory 공통 90일·25 MiB retention, Provider별·전체 refresh single-flight, scheduled/user-initiated 수집 의도 전달
 - Claude Keychain OAuth usage GET adapter와 선택적 statusLine snapshot parser, Codex 공식 app-server read-only adapter
 - `CodexRuntimeLocator`가 저장 경로·GUI PATH·사용자 로컬·Node manager·Codex/ChatGPT 앱 번들 후보를 shell profile 없이 결정론적으로 탐색하고, `CodexAutoProvider`가 후보별 app-server를 직렬 시도
 - Grok 공식 CLI billing backend, Antigravity CLI Gemini `/usage`, Z.ai 공식 `glm-plan-usage` plugin 기반 `observed · Beta` adapter, 다섯 Provider 독립 synthetic parser fixture
@@ -151,7 +151,7 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 3. `GeminiCLIQuotaExecutor`가 고정된 PTY command로 공식 CLI를 열고 `/usage`만 전송한다. terminal protocol 응답은 단계 timeout을 재시작하지 않으며 prompt/model/tool/agent command는 전송하지 않는다.
 4. `GeminiQuotaParser`가 ANSI를 제거하고 `GEMINI MODELS` 그룹의 주간·5시간 잔여율과 refresh duration만 정규화한다.
 5. account/email, Claude/GPT 그룹, session output, raw TUI는 즉시 폐기하며 history에는 normalized ratio와 provenance만 저장한다.
-6. 성공 결과는 5분 재사용하되 재사용 window는 원래 관측 시각을 유지하고 freshness를 `recent`로 바꾼다. current Gemini CLI 개인 login migration 오류 때문에 기존 `/stats model`과 내부 Code Assist endpoint는 사용하지 않는다.
+6. scheduled 수집은 성공 결과를 5분 재사용하되 재사용 window는 원래 관측 시각을 유지하고 freshness를 `recent`로 바꾼다. 사용자 수동 수집은 이 성공 캐시를 우회한다. current Gemini CLI 개인 login migration 오류 때문에 기존 `/stats model`과 내부 Code Assist endpoint는 사용하지 않는다.
 
 ## Claude read-only 흐름
 
@@ -159,7 +159,7 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 2. `ClaudeKeychainCredentialReader`가 `/usr/bin/security`로 service `Claude Code-credentials`, 현재 macOS account의 generic password를 읽고 `claudeAiOauth.accessToken`만 선택한다.
 3. `ClaudeOAuthUsageProvider`가 Anthropic OAuth usage allowlist URL에 GET을 보내고 redirect·cookie·cache를 거부한다. refresh token·모델 endpoint·login/logout은 사용하지 않는다.
 4. `ClaudeOAuthUsageParser`가 5시간·7일·Fable 주간 window만 공통 domain으로 정규화한다. 원본 payload와 credential은 저장하지 않는다.
-5. 성공 결과는 180초 재사용하고 재사용 window는 원래 관측 시각과 `recent` freshness를 사용하며, 429에서는 backoff한다. 이 계약은 `observed · Beta`이며 기존 statusLine은 수정하지 않는다.
+5. scheduled 수집은 성공 결과를 180초 재사용하고 재사용 window는 원래 관측 시각과 `recent` freshness를 사용한다. 사용자 수동 수집은 성공 캐시만 우회하며 429 backoff는 우회하지 않는다. 이 계약은 `observed · Beta`이며 기존 statusLine은 수정하지 않는다.
 
 ## Z.ai GLM official plugin 흐름
 

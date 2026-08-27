@@ -10,20 +10,23 @@ actor RefreshCoordinator {
         self.store = store
     }
 
-    func refresh(_ providerID: ProviderID) async -> ProviderSnapshot? {
+    func refresh(
+        _ providerID: ProviderID,
+        policy: ProviderRefreshPolicy = .scheduled
+    ) async -> ProviderSnapshot? {
         guard let provider = providers[providerID] else { return nil }
         if let existing = active[providerID] { return await existing.value.snapshot }
-        let task = Task { await provider.fetchQuota() }
+        let task = Task { await provider.fetchQuota(policy: policy) }
         active[providerID] = task
         let result = await task.value
         active[providerID] = nil
         return await store.merge(result.snapshot)
     }
 
-    func refreshAll() async -> [ProviderSnapshot] {
+    func refreshAll(policy: ProviderRefreshPolicy = .scheduled) async -> [ProviderSnapshot] {
         await withTaskGroup(of: ProviderSnapshot?.self) { group in
             for provider in ProviderID.allCases {
-                group.addTask { await self.refresh(provider) }
+                group.addTask { await self.refresh(provider, policy: policy) }
             }
             var snapshots: [ProviderSnapshot] = []
             for await snapshot in group {

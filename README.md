@@ -46,7 +46,7 @@
 | ↻ **Reset Bands** | 24시간·7일·30일 실제 history와 reset 경계, 25% 주의선, 10% 위험선을 함께 표시합니다. |
 | 🔌 **명시적 연결** | credential 기반 수집은 기본 비활성화이며 사용자가 **읽기 전용 연결 적용**을 눌러야 시작합니다. |
 | 🎛️ **맞춤 표시** | 균형/압축 밀도, 상대/절대 reset, 상세 inspector, 시스템/미드나이트/그래파이트 테마와 메뉴 막대 Provider 표시 순서를 지원합니다. |
-| ⏱️ **자동 새로고침** | 1·5·15분 주기를 실제 수집에 반영하고, popover를 열면 즉시 갱신한 뒤 최대 1분 간격으로 확인합니다. Provider가 재사용한 캐시는 `최근`으로 구분합니다. |
+| ⏱️ **새로고침** | 1·5·15분 자동 주기와 popover 즉시 수집을 지원합니다. 자동 수집의 재사용 캐시는 `최근`으로 구분하고, 사용자가 누른 새로고침은 성공 캐시를 우회하되 Provider rate-limit backoff는 지킵니다. |
 | 💽 **로컬 디스크 용량** | 메뉴바 popover에서 `/` 내부 볼륨과 metadata로 판정한 `/Volumes` local·non-internal 후보의 사용률을 관찰합니다. 외장 후보가 없거나 조회에 실패하면 외장 badge를 숨기며, 디스크 값은 quota/history/export와 분리합니다. |
 | 🔐 **로컬 우선** | 자체 서버·telemetry·광고 SDK가 없으며 원본 payload, 프롬프트, 응답, 이메일, 계정 ID를 저장하지 않습니다. |
 | 🧭 **Universal macOS** | macOS 14 이상에서 Apple Silicon과 Intel을 모두 지원하는 SwiftUI/AppKit 네이티브 앱입니다. |

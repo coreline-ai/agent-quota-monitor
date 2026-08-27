@@ -102,8 +102,13 @@ actor ZAIPluginUsageProvider: QuotaProvider {
     }
 
     func fetchQuota() async -> ProviderFetchResult {
+        await fetchQuota(policy: .scheduled)
+    }
+
+    func fetchQuota(policy: ProviderRefreshPolicy) async -> ProviderFetchResult {
         let startedAt = Date()
-        if let lastRequestAt,
+        if policy.allowsCachedSuccess,
+           let lastRequestAt,
            startedAt.timeIntervalSince(lastRequestAt) < Self.minimumRequestInterval,
            let cachedSuccess {
             return ProviderFetchResult(snapshot: cachedSuccess.snapshot.markingFreshness(.recent))

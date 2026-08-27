@@ -73,7 +73,7 @@ struct DashboardSettingsView: View {
                 }
 
                 SignalPanel(title: "데이터 관리") {
-                    Button("지금 새로고침") { Task { await model.refresh() } }
+                    Button("지금 새로고침") { Task { await model.refreshManually() } }
                     Button("History 삭제", role: .destructive) {
                         Task { historyStatus = await model.deleteHistory() ? "삭제됨" : "삭제 실패" }
                     }

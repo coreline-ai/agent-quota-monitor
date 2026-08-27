@@ -8,6 +8,7 @@
 - Marked reused Claude, Gemini, and Z.ai cache observations as `recent` instead of `live` while preserving their original observation time.
 - Kept the in-memory history aligned with the persisted 90-day/25-MiB retention result.
 - Isolated XCUITests from real Provider opt-ins and preserved the user's application preferences around each UI test.
+- Made user-initiated refresh bypass Claude, Gemini, and Z.ai success caches while preserving Provider rate-limit backoff, and added continuous or Reduce-Motion-safe progress feedback with second-level completion time in the menu-bar popover.
 
 ## 0.1.0-rc.1 — 2026-08-20 (local validation)
 

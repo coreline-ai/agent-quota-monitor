@@ -113,6 +113,6 @@ final class StatusItemController: NSObject {
 
     @objc
     private func refresh() {
-        Task { await model.refresh() }
+        Task { await model.refreshManually() }
     }
 }

@@ -86,7 +86,7 @@ struct DashboardRootView: View {
                 .accessibilityIdentifier("dashboard.openConnections")
 
                 Button {
-                    Task { await model.refresh() }
+                    Task { await model.refreshManually() }
                 } label: {
                     DashboardSidebarLabel(title: "새로고침", symbol: "arrow.clockwise")
                         .frame(maxWidth: .infinity, alignment: .leading)

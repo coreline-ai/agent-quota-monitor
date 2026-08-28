@@ -25,16 +25,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !isUITesting {
             LegacyPreferencesMigrator.migrateIfNeeded(defaults: AppPreferences.current)
         }
-        let dashboardWindowController = DashboardWindowController(model: model)
-        self.dashboardWindowController = dashboardWindowController
         statusItemController = StatusItemController(
             model: model,
             diskUsageProvider: diskUsageProvider,
-            onShowDashboard: { [weak dashboardWindowController] in
-                dashboardWindowController?.showWindow()
+            onShowDashboard: { [weak self] in
+                self?.showDashboard()
             },
-            onShowAllProviders: { [weak dashboardWindowController] in
-                dashboardWindowController?.showAllProviders()
+            onShowAllProviders: { [weak self] in
+                self?.showAllProviders()
             },
             onQuit: {
                 NSApplication.shared.terminate(nil)
@@ -42,7 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         if isUITesting {
-            dashboardWindowController.showWindow()
+            showDashboard()
         }
         if environment["AIQUOTAMONITOR_UI_TEST_POPOVER"] == "1" {
             // Status-item attachment can lag behind the app window on a busy UI
@@ -84,5 +82,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc
     private func handleSleep() {
         model.cancel()
+    }
+
+    private func showDashboard() {
+        dashboardController().showWindow()
+    }
+
+    private func showAllProviders() {
+        dashboardController().showAllProviders()
+    }
+
+    private func dashboardController() -> DashboardWindowController {
+        if let dashboardWindowController { return dashboardWindowController }
+        let controller = DashboardWindowController(model: model)
+        dashboardWindowController = controller
+        return controller
     }
 }

@@ -52,7 +52,7 @@ flowchart LR
 - 신규 `QuotaBeaconStatus` template asset 기반 status item과 왼쪽 popover/오른쪽 menu
 - `QuotaRatio`, window provenance/freshness, typed state/error, last-known-good merge
 - cancellation/timeout HTTP·Process 경계와 read-only credential validator/Keychain
-- versioned JSON history, disk·memory 공통 90일·25 MiB retention, Provider별·전체 refresh single-flight, scheduled/user-initiated 수집 의도 전달
+- versioned JSON history, 30일·8 MiB retention, 5분·reset-aware compaction, no-op write 생략, Provider별·전체 refresh single-flight, scheduled/user-initiated 수집 의도 전달
 - Claude Keychain OAuth usage GET adapter와 선택적 statusLine snapshot parser, Codex 공식 app-server read-only adapter
 - `CodexRuntimeLocator`가 저장 경로·GUI PATH·사용자 로컬·Node manager·Codex/ChatGPT 앱 번들 후보를 shell profile 없이 결정론적으로 탐색하고, `CodexAutoProvider`가 후보별 app-server를 직렬 시도
 - Grok 공식 CLI billing backend, Antigravity CLI Gemini `/usage`, Z.ai 공식 `glm-plan-usage` plugin 기반 `observed · Beta` adapter, 다섯 Provider 독립 synthetic parser fixture
@@ -128,10 +128,10 @@ GUI 회귀는 실제 `NSPopover`를 여는 XCUITest와 dashboard navigation XCUI
 
 ## 추세 표시 흐름
 
-1. `QuotaMonitorModel.history`의 정규화된 `ProviderSnapshot`만 `TrendPresentation`에 전달한다.
+1. `HistoryStore`는 window가 있는 정규화 `ProviderSnapshot`만 5분·reset identity 단위로 압축하고, `QuotaMonitorModel.history`와 revision을 `TrendPresentation`에 전달한다.
 2. 선택한 24시간·7일·30일 cutoff로 관측값을 제한하고 Provider와 `QuotaWindowKind`를 안정적인 series key로 만든다.
 3. countdown 기반 reset timestamp의 sub-second 흔들림은 reset minute identity로 정규화한다. 실제 reset cycle, freshness 변화, 기간별 최대 gap은 각각 별도 line segment가 된다.
-4. 24시간·7일·30일에 맞는 bucket으로 first·minimum·last point를 보존해 mark 수를 제한한다.
+4. 24시간·7일·30일에 맞는 화면 bucket으로 first·minimum·last point를 보존해 mark 수를 제한하고, range·Provider·history revision이 바뀔 때만 chart model을 다시 만든다.
 5. 화면은 linear `LineMark`, 최신 `PointMark`, 주 series의 옅은 `AreaMark`, 25%·10% `RuleMark`, 과거 reset `RectangleMark`를 그린다.
 6. pace는 현재 reset instance의 fresh 표본만 사용하며 3개 미만, 감소 없음, reset 전 소진 없음 상태를 수치 예측과 구분한다.
 7. quota와 local token은 서로 다른 surface를 유지하며 local source가 없으면 연결 안내만 표시한다.

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct TrendsView: View {
     let snapshots: [ProviderSnapshot]
+    let historyRevision: Int
     var onShowDataSources: () -> Void = {}
 
     @Environment(\.colorScheme) private var colorScheme
@@ -10,11 +11,19 @@ struct TrendsView: View {
     @State private var range = TrendRange.day
     @State private var selectedProvider: ProviderID?
     @State private var selectedDate: Date?
+    @State private var models: TrendModels
 
-    init(snapshots: [ProviderSnapshot], onShowDataSources: @escaping () -> Void = {}) {
+    init(
+        snapshots: [ProviderSnapshot],
+        historyRevision: Int = 0,
+        onShowDataSources: @escaping () -> Void = {}
+    ) {
         self.snapshots = snapshots
+        self.historyRevision = historyRevision
         self.onShowDataSources = onShowDataSources
-        _selectedProvider = State(initialValue: TrendPresentation.suggestedProvider(snapshots: snapshots))
+        let provider = TrendPresentation.suggestedProvider(snapshots: snapshots)
+        _selectedProvider = State(initialValue: provider)
+        _models = State(initialValue: Self.makeModels(snapshots: snapshots, range: .day, provider: provider))
     }
 
     private var palette: BeaconPalette {
@@ -22,11 +31,11 @@ struct TrendsView: View {
     }
 
     private var chartModel: TrendChartModel {
-        TrendPresentation.makeModel(snapshots: snapshots, range: range, provider: selectedProvider)
+        models.selected
     }
 
     private var allProviderModel: TrendChartModel {
-        TrendPresentation.makeModel(snapshots: snapshots, range: range, provider: nil)
+        models.all
     }
 
     private var availableProviders: [ProviderID] {
@@ -64,13 +73,35 @@ struct TrendsView: View {
         }
         .background(palette.canvas)
         .accessibilityIdentifier("dashboard.trends")
-        .onChange(of: range) { _, _ in selectedDate = nil }
-        .onChange(of: selectedProvider) { _, _ in selectedDate = nil }
+        .onChange(of: range) { _, _ in
+            selectedDate = nil
+            rebuildModels()
+        }
+        .onChange(of: selectedProvider) { _, _ in
+            selectedDate = nil
+            rebuildModels()
+        }
+        .onChange(of: historyRevision) { _, _ in rebuildModels() }
         .onChange(of: availableProviders) { _, providers in
             if let selectedProvider, !providers.contains(selectedProvider) {
                 self.selectedProvider = TrendPresentation.suggestedProvider(snapshots: snapshots)
             }
         }
+    }
+
+    private static func makeModels(
+        snapshots: [ProviderSnapshot],
+        range: TrendRange,
+        provider: ProviderID?
+    ) -> TrendModels {
+        TrendModels(
+            selected: TrendPresentation.makeModel(snapshots: snapshots, range: range, provider: provider),
+            all: TrendPresentation.makeModel(snapshots: snapshots, range: range, provider: nil)
+        )
+    }
+
+    private func rebuildModels() {
+        models = Self.makeModels(snapshots: snapshots, range: range, provider: selectedProvider)
     }
 
     private var header: some View {
@@ -369,6 +400,11 @@ struct TrendsView: View {
         case .critical: AppTheme.danger
         }
     }
+}
+
+private struct TrendModels {
+    let selected: TrendChartModel
+    let all: TrendChartModel
 }
 
 private struct TrendLineChart: View {

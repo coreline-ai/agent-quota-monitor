@@ -23,16 +23,17 @@ final class PersistenceTests: XCTestCase {
         let file = directory.appending(path: "history.json")
         let store = HistoryStore(fileURL: file)
         let now = Date(timeIntervalSince1970: 1_786_860_000)
-        let recent = snapshot(finishedAt: now)
-        let expired = snapshot(finishedAt: now.addingTimeInterval(-91 * 86_400))
-        let retained = try await store.save([expired, recent], now: now)
+        let recent = try snapshot(observedAt: now)
+        let duplicate = try snapshot(observedAt: now.addingTimeInterval(60))
+        let expired = try snapshot(observedAt: now.addingTimeInterval(-31 * 86_400))
+        let retained = try await store.save([expired, recent, duplicate], now: now)
         XCTAssertEqual(retained.count, 1)
         let loaded = try await store.load()
         XCTAssertEqual(loaded.count, 1)
 
         try Data("broken".utf8).write(to: file)
         do {
-            _ = try await store.load()
+            _ = try await HistoryStore(fileURL: file).load()
             XCTFail("Corrupt history should fail")
         } catch {
             let contents = try FileManager.default.contentsOfDirectory(atPath: directory.path)
@@ -53,19 +54,29 @@ final class PersistenceTests: XCTestCase {
         )
     }
 
-    private func snapshot(finishedAt: Date) -> ProviderSnapshot {
-        ProviderSnapshot(
+    private func snapshot(observedAt: Date) throws -> ProviderSnapshot {
+        try ProviderSnapshot(
             provider: .claude,
-            state: .failed,
-            windows: [],
+            state: .available,
+            windows: [QuotaWindow(
+                kind: .fiveHour,
+                usedRatio: QuotaRatio(0.25),
+                resetsAt: Date(timeIntervalSince1970: 1_786_880_000),
+                provenance: ValueProvenance(
+                    source: .officialDocument,
+                    contract: .documented,
+                    observedAt: observedAt,
+                    freshness: .live
+                )
+            )],
             credits: nil,
             lastAttempt: CollectionAttempt(
-                startedAt: finishedAt,
-                finishedAt: finishedAt,
-                succeeded: false,
+                startedAt: observedAt,
+                finishedAt: observedAt,
+                succeeded: true,
                 diagnostic: nil
             ),
-            lastSuccessAt: nil
+            lastSuccessAt: observedAt
         )
     }
 }

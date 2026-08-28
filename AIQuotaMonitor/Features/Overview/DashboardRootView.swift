@@ -138,6 +138,7 @@ struct DashboardRootView: View {
         case .trends:
             TrendsView(
                 snapshots: model.history.isEmpty ? model.snapshots : model.history,
+                historyRevision: model.historyRevision,
                 onShowDataSources: { chrome.selection = .dataSources }
             )
         case .dataSources: DataSourcesView(snapshots: model.snapshots)

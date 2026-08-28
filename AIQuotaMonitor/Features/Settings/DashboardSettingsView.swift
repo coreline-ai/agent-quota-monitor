@@ -78,7 +78,7 @@ struct DashboardSettingsView: View {
                         Task { historyStatus = await model.deleteHistory() ? "삭제됨" : "삭제 실패" }
                     }
                     if !historyStatus.isEmpty { Text(historyStatus).font(.caption).foregroundStyle(.secondary) }
-                    Text("History는 90일 또는 25 MiB 중 먼저 도달한 기준으로 정리됩니다.")
+                    Text("History는 5분 단위로 압축되며 30일 또는 8 MiB 중 먼저 도달한 기준으로 정리됩니다.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

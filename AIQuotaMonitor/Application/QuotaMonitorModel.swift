@@ -6,6 +6,7 @@ final class QuotaMonitorModel: ObservableObject {
     @Published private(set) var isRefreshing = false
     @Published private(set) var lastRefreshAt: Date?
     @Published private(set) var history: [ProviderSnapshot] = []
+    @Published private(set) var historyRevision = 0
 
     private var coordinator: RefreshCoordinator
     private var automaticRefreshTask: Task<Void, Never>?
@@ -175,7 +176,10 @@ final class QuotaMonitorModel: ObservableObject {
     func deleteHistory() async -> Bool {
         do {
             try await historyStore.delete()
-            history = []
+            if !history.isEmpty {
+                history = []
+                historyRevision &+= 1
+            }
             return true
         } catch {
             return false
@@ -185,7 +189,11 @@ final class QuotaMonitorModel: ObservableObject {
     private func loadHistoryIfNeeded() async {
         guard !didLoadHistory else { return }
         didLoadHistory = true
-        history = (try? await historyStore.load()) ?? []
+        let loaded = (try? await historyStore.load()) ?? []
+        if loaded != history {
+            history = loaded
+            historyRevision &+= 1
+        }
     }
 
     private func performRefresh(id: UUID, policy: ProviderRefreshPolicy) async {
@@ -208,12 +216,13 @@ final class QuotaMonitorModel: ObservableObject {
             snapshots: nextSnapshots
         )
         lastRefreshAt = Date()
-        history.append(contentsOf: nextSnapshots)
 
-        if let retained = try? await historyStore.save(history),
+        if let result = try? await historyStore.record(nextSnapshots),
+           result.changed,
            !Task.isCancelled,
            inFlightRefresh?.id == id {
-            history = retained
+            history = result.snapshots
+            historyRevision &+= 1
         }
         guard !Task.isCancelled, inFlightRefresh?.id == id else { return }
         await deliverQuotaNotificationsIfAllowed()

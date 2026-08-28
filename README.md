@@ -99,7 +99,7 @@ flowchart LR
 
 - **Adapter**: Provider별 read-only 경로만 호출하고 login, OAuth refresh, 모델 실행, 결제를 수행하지 않습니다.
 - **Normalizer**: `ProviderSnapshot`, `QuotaWindow`, `SourceProvenance`로 정규화합니다.
-- **History**: 원본 응답 대신 정규화된 ratio와 필요한 metadata만 로컬에 저장합니다.
+- **History**: 원본 응답 대신 정규화된 ratio와 필요한 metadata만 로컬에 저장하며, 30일·8 MiB 한도와 5분 관측 bucket으로 상주량을 제한합니다.
 - **Presentation**: 메뉴 막대와 상세 창이 동일 snapshot을 사용하므로 숫자와 상태 의미가 일치합니다.
 
 ## 🚀 설치와 실행

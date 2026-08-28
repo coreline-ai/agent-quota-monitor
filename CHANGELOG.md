@@ -6,7 +6,7 @@
 - Fixed global backoff so one failed Provider no longer delays healthy Providers; 15/60-minute backoff now requires every attempted Provider to fail in consecutive cycles.
 - Made exhausted quota explicit as `한도 소진 · 사용 100%`, including Grok's exact 100% boundary.
 - Marked reused Claude, Gemini, and Z.ai cache observations as `recent` instead of `live` while preserving their original observation time.
-- Kept the in-memory history aligned with the persisted 90-day/25-MiB retention result.
+- Reduced resident and refresh-peak memory by compacting normalized history into five-minute/reset-aware observations with 30-day/8-MiB retention, skipping no-op persistence, lazily creating the dashboard, and caching trend presentation models.
 - Isolated XCUITests from real Provider opt-ins and preserved the user's application preferences around each UI test.
 - Made user-initiated refresh bypass Claude, Gemini, and Z.ai success caches while preserving Provider rate-limit backoff, and added continuous or Reduce-Motion-safe progress feedback with second-level completion time in the menu-bar popover.
 
